@@ -30,10 +30,6 @@
     };
   };
 in {
-  imports = [
-    ./dag.nix
-  ];
-
   options = {
     path = mkOption {
       default = {};
@@ -63,7 +59,7 @@ in {
         ${lib.concatMapStringsSep "\n" ({
           name,
           value,
-        }: "ln -vsT ${config.static.derivations.path}/${name} $ROOT/${name} ")
+        }: "ln -vsfT $AM_STATIC/${name} $AM_ROOT/${name} ")
         allPaths}
       '';
     };

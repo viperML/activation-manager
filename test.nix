@@ -1,14 +1,13 @@
 {pkgs ? import <nixpkgs> {}}: let
-  mod = {config, ...}: {
-    rootPath.absolute = "/tmp";
-    path."test.nix".source = ./test.nix;
-    path."hosts".source = "/etc/hosts";
-  };
-
-  activation-manager = (import ./default.nix pkgs.lib) {
-    inherit pkgs;
-    modules = [mod];
-  };
+  am = import ./. pkgs.lib;
 in {
-  evalResult = activation-manager;
+  home = am {
+    inherit pkgs;
+    modules = [
+      ./modules/home
+      {
+        path."test.nix".source = ./test.nix;
+      }
+    ];
+  };
 }

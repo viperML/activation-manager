@@ -11,10 +11,10 @@
     ;
 in {
   options = {
-    rootPath = {
+    root.location = {
       command = mkOption {
         type = types.nullOr types.str;
-        description = mdDoc "Command to run that outputs the root directory";
+        description = mdDoc "Command that outputs the location to stdout";
         default = null;
       };
 

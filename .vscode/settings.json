@@ -1,0 +1,5 @@
+{
+    "perlnavigator.includePaths": [
+        "${workspaceFolder}/bin"
+    ]
+}
