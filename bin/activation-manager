@@ -3,9 +3,5 @@ use v5.38;
 use strict;
 use warnings;
 
-use FindBin;
-use File::Spec::Functions qw(catdir);
-use lib catdir($FindBin::Bin, "..", "lib");
-
 use AM;
 AM->run;
