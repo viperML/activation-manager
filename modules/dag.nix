@@ -22,8 +22,8 @@
         default = [];
       };
 
-      exec = mkOption {
-        type = types.nullOr types.package;
+      command = mkOption {
+        type = types.nullOr (types.listOf types.str);
         default = null;
       };
     };

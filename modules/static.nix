@@ -33,7 +33,7 @@ in {
         };
 
         command = mkOption {
-          type = types.nullOr types.str;
+          type = types.nullOr (types.listOf types.str);
           description = mdDoc "Command to get the static files location. $AM_ROOT is available";
           default = null;
         };

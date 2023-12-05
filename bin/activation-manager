@@ -1,7 +1,0 @@
-#!/usr/bin/env -S perl
-use v5.38;
-use strict;
-use warnings;
-
-use AM;
-AM->run;

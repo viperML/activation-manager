@@ -15,7 +15,20 @@
   in {
     am = import ./test.nix {pkgs = nixpkgs.legacyPackages.x86_64-linux;};
 
-    packages = forAllSystems (pkgs: {
+    packages = forAllSystems (pkgs: rec {
+      default = pkgs.python3.pkgs.callPackage ./package.nix {};
+      env = pkgs.python3.withPackages (_: [default]);
+    });
+
+    devShells = forAllSystems (pkgs: {
+      default = with pkgs;
+        mkShellNoCC {
+          packages = [
+            (python3.withPackages (pp: [
+              pp.networkx
+            ]))
+          ];
+        };
     });
   };
 }

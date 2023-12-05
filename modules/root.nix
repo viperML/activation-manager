@@ -13,7 +13,7 @@ in {
   options = {
     root.location = {
       command = mkOption {
-        type = types.nullOr types.str;
+        type = types.nullOr (types.listOf types.str);
         description = mdDoc "Command that outputs the location to stdout";
         default = null;
       };

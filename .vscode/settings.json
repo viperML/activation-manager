@@ -1,5 +1,3 @@
 {
-    "perlnavigator.includePaths": [
-        "${workspaceFolder}/bin"
-    ]
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python3",
 }

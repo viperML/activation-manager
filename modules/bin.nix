@@ -13,12 +13,6 @@ in {
   };
 
   config.bin = {
-    activation-manager = pkgs.perlPackages.buildPerlPackage {
-      pname = "activation-manager";
-      version = "0";
-
-      src = lib.cleanSource ../.;
-      outputs = ["out"];
-    };
+    activation-manager = pkgs.python3.pkgs.callPackage ../package.nix {};
   };
 }
