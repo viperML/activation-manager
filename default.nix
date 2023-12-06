@@ -18,6 +18,20 @@ lib: let
         // (import ./modules/.mkPath.nix {inherit pkgs lib;});
     };
 in {
-  __functor = _: eval;
-  inherit eval;
+  lib = {
+    __functor = _: eval;
+    inherit eval;
+    home-bundle = args:
+      (eval (args
+        // {
+          modules =
+            args.modules
+            ++ [
+              ./modules/home
+            ];
+        }))
+      .config
+      .bin
+      .bundle;
+  };
 }
