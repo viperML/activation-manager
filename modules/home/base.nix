@@ -12,7 +12,7 @@
   };
 
   config = lib.mkMerge [
-    (mkPathConfig config.xdg.configPath "xdg-config")
+    (mkPathConfig config.xdg.configPath "xdg-config-path")
     {
       root.location.command = [
         "printenv"

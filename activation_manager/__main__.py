@@ -83,7 +83,8 @@ def main() -> int:
         # check for None
         info(f"Running activation for {node_name}")
         if cmd := G.nodes[node_name]["command"]:
-            info(f"{cmd}")
+            cmd_human = " ".join(cmd)
+            info(f"$ {cmd_human}")
             subprocess.run(cmd, check=True)
 
     return(0)
