@@ -8,7 +8,7 @@ in {
       {
         # path."test.nix".source = ./test.nix;
         # path."test/test2.nix".source = ./test.nix;
-        # xdg.configPath."test3.nix".source = "/etc/hosts";
+        xdg.configPath."test3.nix".source = "/etc/hosts";
       }
     ];
   };
