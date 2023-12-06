@@ -24,7 +24,7 @@ def main() -> int:
         format="%(levelname)s %(message)s",
     )
 
-    info("Hello world")
+    info("Welcome to a activation-manager")
 
 
     manifest_file: Path = args.manifest
