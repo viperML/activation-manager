@@ -7,7 +7,7 @@ import subprocess
 from typing import Any, Dict, List
 import networkx as nx
 import logging
-from logging import info, debug
+from logging import info, debug, error
 
 def main() -> int:
     parser = argparse.ArgumentParser(
@@ -51,6 +51,10 @@ def main() -> int:
 
         elif abs := manifest[node]["location"]["absolute"]:
             environ[env_var] = abs
+
+        else:
+            error(f"Neither command nor absolute path specified for {env_var}")
+            return 1
 
         debug(f"{environ[env_var]=}")
 

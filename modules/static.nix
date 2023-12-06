@@ -43,7 +43,7 @@ in {
 
   config.static = {
     result = pkgs.buildEnv {
-      name = "activation-manager-static";
+      name = "am-static";
       paths = builtins.attrValues config.static.derivations;
     };
   };

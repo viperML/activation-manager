@@ -25,7 +25,12 @@ in {
   options = {
     manifest = mkOption {
       type = types.package;
-      description = mdDoc "Resulting manifest of all entries";
+      description = mdDoc "Resulting manifest of all entries.";
+    };
+
+    flavor = mkOption {
+      type = types.enum ["home"];
+      description = mdDoc "Specific configuration for the task.";
     };
   };
 
