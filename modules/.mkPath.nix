@@ -38,6 +38,16 @@
         description = mdDoc "Prefix to prepend to destination path";
         default = defaultPrefix;
       };
+
+      recursive = mkOption {
+        type = types.bool;
+        description = mdDoc ''
+          If the source is a directory, try to walk it linking all the inmediate files or symlink leaves.
+
+          Useful for keeping part of a folder mutable (e.g. ~/.config/systemd).
+        '';
+        default = false;
+      };
     };
   };
 
@@ -67,17 +77,47 @@
     '';
 
     dag.nodes = lib.mapAttrs' (name: value:
-      lib.nameValuePair "am-${cfgName}-${name}" {
+      lib.nameValuePair "${cfgName}-${name}" {
         command = [
-          (lib.getExe (pkgs.writeShellScriptBin "am-path-activate" ''
-            destFile="$AM_ROOT/$1"
-            destDir="$(dirname "$destFile")"
-            if [[ ! -d "$destDir" ]]; then
-              mkdir -pv "$destDir"
-            fi
+          (
+            if !value.recursive
+            then
+              (lib.getExe (pkgs.writeShellScriptBin "am-path-activate" ''
+                set -eu
+                destPath="$AM_ROOT/$1"
+                destDir="$(dirname "$destPath")"
+                if [[ ! -d "$destDir" ]]; then
+                  mkdir -pv "$destDir"
+                fi
 
-            ln -vsfT "$AM_STATIC/$1" "$destFile"
-          ''))
+                ln -vsfT "$AM_STATIC/$1" "$destPath"
+              ''))
+            else
+              (lib.getExe (pkgs.writeShellScriptBin "am-path-activate-recursive" ''
+                set -eu
+                shopt -s nullglob
+                shopt -s globstar
+                for sourcePath in "$AM_STATIC/$1"/**/*; do
+                  # surely there's a better way to only glob files or links
+                  if [[ -d "$sourcePath" ]]; then
+                    continue
+                  fi
+                  # echo "sourcePath=$sourcePath"
+
+                  prefix="''${sourcePath#$AM_STATIC}"
+                  destPath="$AM_ROOT$prefix"
+                  destDir="$(dirname "$destPath")"
+                  # echo destDir="$destDir"
+                  if [[ ! -d "$destDir" ]]; then
+                    # echo $ mkdir -pv "$destDir"
+                    mkdir -pv "$destDir"
+                  fi
+
+                  # echo $ ln -vsfT "$sourcePath" "$destPath"
+                  ln -vsfT "$sourcePath" "$destPath"
+                done
+              ''))
+          )
           "${value.prefix}${value.destination}"
         ];
       })

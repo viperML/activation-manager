@@ -16,6 +16,7 @@ in {
     ./dag.nix
     ./static.nix
     ./root.nix
+    ./utils.nix
 
     # Functionality
     ./path.nix

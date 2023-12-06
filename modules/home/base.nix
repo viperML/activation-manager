@@ -14,6 +14,7 @@
   config = lib.mkMerge [
     (mkPathConfig config.xdg.configPath "xdg-config-path")
     {
+      flavor = "home";
       root.location.command = [
         "printenv"
         "HOME"

@@ -23,7 +23,7 @@ in {
   config.bin = {
     activation-manager = pkgs.python3.pkgs.callPackage ../package.nix {};
     activate = pkgs.writeShellScriptBin "activate" ''
-      ${lib.getExe config.bin.activation-manager} --manifest ${config.manifest}
+      ${lib.getExe config.bin.activation-manager} --manifest ${config.manifest} "$@"
     '';
     bundle = pkgs.symlinkJoin {
       name = "activation-manager-bundle";
