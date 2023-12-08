@@ -18,25 +18,36 @@
       packages = forAllSystems (pkgs: rec {
         default = pkgs.python3.pkgs.callPackage ./package.nix {};
         dev = default.overrideAttrs (_: {src = null;});
-        example-home = with pkgs;
-          buildEnv {
-            name = "home";
-            paths = [
-              # regular packages
-              pkgs.eza
-              pkgs.neofetch
-
-              (self.lib.home-bundle {
-                inherit pkgs;
-                modules = [
-                  {
-                    xdg.configPath."hosts".source = "/etc/hosts";
-                    xdg.configPath."someDir".source = "/tmp";
-                  }
-                ];
-              })
+        example-home = let
+          eval = self.lib {
+            inherit pkgs;
+            modules = [
+              ./modules/home
+              {
+                xdg.configPath."hosts".source = "/etc/hosts";
+                xdg.configPath."someDir".source = "/tmp";
+                systemd.user.services."test" = {
+                  wantedBy = ["default.target"];
+                  serviceConfig.ExecStart = "${pkgs.coreutils}/bin/tail -f /etc/hosts";
+                };
+              }
             ];
           };
+        in
+          with pkgs;
+            (buildEnv {
+              name = "home";
+              paths = [
+                # regular packages
+                pkgs.eza
+                pkgs.neofetch
+
+                eval.config.bin.bundle
+              ];
+            })
+            .overrideAttrs (_: {
+              passthru = {inherit eval;};
+            });
       });
 
       devShells = forAllSystems (pkgs: {
