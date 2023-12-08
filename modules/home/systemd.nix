@@ -78,28 +78,28 @@ in {
     dag.nodes = lib.mkMerge [
       # TODO: start units
       {
-        "systemd-user-reload" = {
-          after = ["xdg-config-path-systemd/user"];
-          command = [
-            "systemctl"
-            "--user"
-            "daemon-reload"
-          ];
-        };
+        # "systemd-user-reload" = {
+        #   after = ["xdg-config-path-systemd/user"];
+        #   command = [
+        #     "systemctl"
+        #     "--user"
+        #     "daemon-reload"
+        #   ];
+        # };
 
-        "systemd-user-stop-not-found" = {
-          after = ["systemd-user-reload"];
-          command = [
-            (lib.getExe (pkgs.writeShellScriptBin "systemd-stop-lingering" ''
-              systemctl --user list-units --state=not-found --plain --no-legend \
-              | ${lib.getExe pkgs.gnugrep} -v inactive \
-              | sed 's/\s\+.*//' \
-              | while IFS= read -r line; do
-                systemctl --user stop $line
-              done
-            ''))
-          ];
-        };
+        # "systemd-user-stop-not-found" = {
+        #   after = ["systemd-user-reload"];
+        #   command = [
+        #     (lib.getExe (pkgs.writeShellScriptBin "systemd-stop-lingering" ''
+        #       systemctl --user list-units --state=not-found --plain --no-legend \
+        #       | ${lib.getExe pkgs.gnugrep} -v inactive \
+        #       | sed 's/\s\+.*//' \
+        #       | while IFS= read -r line; do
+        #         systemctl --user stop $line
+        #       done
+        #     ''))
+        #   ];
+        # };
       }
     ];
 

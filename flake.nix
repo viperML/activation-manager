@@ -15,8 +15,9 @@
   in
     (import ./. nixpkgs.lib)
     // {
-      packages = forAllSystems (pkgs: {
+      packages = forAllSystems (pkgs: rec {
         default = pkgs.python3.pkgs.callPackage ./package.nix {};
+        dev = default.overrideAttrs (_: {src = null;});
         example-home = with pkgs;
           buildEnv {
             name = "home";
@@ -39,12 +40,9 @@
       });
 
       devShells = forAllSystems (pkgs: {
-        default = with pkgs;
+        shell = with pkgs;
           mkShellNoCC {
             packages = [
-              (python3.withPackages (pp: [
-                pp.networkx
-              ]))
             ];
           };
       });

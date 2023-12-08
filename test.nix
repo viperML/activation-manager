@@ -8,10 +8,10 @@ in
       {
         xdg.configPath."test3.nix".source = "/etc/hosts";
 
-        systemd.user.services."test" = {
-          wantedBy = ["default.target"];
-          serviceConfig.ExecStart = "${pkgs.coreutils}/bin/tail -f /etc/hosts";
-        };
+        # systemd.user.services."test" = {
+        #   wantedBy = ["default.target"];
+        #   serviceConfig.ExecStart = "${pkgs.coreutils}/bin/tail -f /etc/hosts";
+        # };
       }
     ];
   }

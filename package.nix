@@ -3,6 +3,7 @@
   setuptools-scm,
   lib,
   networkx,
+  dasbus,
 }:
 buildPythonPackage {
   pname = "activation-manager";
@@ -23,6 +24,7 @@ buildPythonPackage {
   ];
   propagatedBuildInputs = [
     networkx
+    dasbus
   ];
   strictDeps = true;
   meta.mainProgram = "activation-manager";
