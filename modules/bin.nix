@@ -23,13 +23,17 @@ in {
   config.bin = {
     activation-manager = pkgs.python3.pkgs.callPackage ../package.nix {};
     activate = pkgs.writeShellScriptBin "activate" ''
-      ${lib.getExe config.bin.activation-manager} --manifest ${config.manifest} "$@"
+      ${lib.getExe config.bin.activation-manager} "$@" activate --manifest ${config.manifest}
     '';
     bundle = pkgs.symlinkJoin {
       name = "activation-manager-bundle";
       paths = [
         config.bin.activation-manager
         config.bin.activate
+        (pkgs.runCommandLocal "am-manifest" {} ''
+          mkdir -p $out/etc
+          ln -vsfT ${config.manifest} $out/etc/manifest.json
+        '')
       ];
     };
   };

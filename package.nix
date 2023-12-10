@@ -4,6 +4,7 @@
   lib,
   networkx,
   dasbus,
+  makeWrapper,
 }:
 buildPythonPackage {
   pname = "activation-manager";
@@ -21,11 +22,15 @@ buildPythonPackage {
   };
   nativeBuildInputs = [
     setuptools-scm
+    makeWrapper
   ];
   propagatedBuildInputs = [
     networkx
     dasbus
   ];
+  postFixup = ''
+    wrapProgram $out/bin/activation-manager --prefix PATH : "$out/bin"
+  '';
   strictDeps = true;
   meta.mainProgram = "activation-manager";
 }

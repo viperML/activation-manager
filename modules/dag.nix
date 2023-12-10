@@ -22,9 +22,19 @@
         default = [];
       };
 
+      before = mkOption {
+        type = types.listOf types.str;
+        default = [];
+      };
+
       command = mkOption {
         type = types.nullOr (types.listOf types.str);
         default = null;
+      };
+
+      generatesNodes = mkOption {
+        type = types.bool;
+        default = false;
       };
     };
   };

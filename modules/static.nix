@@ -41,10 +41,22 @@ in {
     };
   };
 
-  config.static = {
-    result = pkgs.buildEnv {
-      name = "am-static";
-      paths = builtins.attrValues config.static.derivations;
+  config = {
+    dag.nodes."static" = {
+      command = [
+        "sh"
+        "-c"
+        ''
+          nix build ${config.static.result} --out-link "$AM_STATIC"
+        ''
+      ];
+    };
+
+    static = {
+      result = pkgs.buildEnv {
+        name = "am-static";
+        paths = builtins.attrValues config.static.derivations;
+      };
     };
   };
 }

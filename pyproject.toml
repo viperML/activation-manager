@@ -23,6 +23,7 @@ activation-manager = "activation_manager.__main__:main"
 
 [tool.pyright]
 reportUnusedImport = "warning"
+
 # pyright doesn't like dasbus
 reportOptionalCall = false
 reportGeneralTypeIssues = false

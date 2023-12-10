@@ -23,14 +23,7 @@
             inherit pkgs;
             modules = [
               ./modules/home
-              {
-                xdg.configPath."hosts".source = "/etc/hosts";
-                xdg.configPath."someDir".source = "/tmp";
-                systemd.user.services."test" = {
-                  wantedBy = ["default.target"];
-                  serviceConfig.ExecStart = "${pkgs.coreutils}/bin/tail -f /etc/hosts";
-                };
-              }
+              ./test/home.nix
             ];
           };
         in
@@ -46,7 +39,7 @@
               ];
             })
             .overrideAttrs (_: {
-              passthru = {inherit eval;};
+              passthru = eval;
             });
       });
 

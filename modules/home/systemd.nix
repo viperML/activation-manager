@@ -76,30 +76,37 @@ in {
     };
 
     dag.nodes = lib.mkMerge [
-      # TODO: start units
       {
-        # "systemd-user-reload" = {
-        #   after = ["xdg-config-path-systemd/user"];
-        #   command = [
-        #     "systemctl"
-        #     "--user"
-        #     "daemon-reload"
-        #   ];
-        # };
+        "systemd-reload" = {
+          after = [
+            "xdg-config-path-systemd/user"
+          ];
+          command = [
+            "busctl"
+            "--user"
+            "call"
+            "org.freedesktop.systemd1"
+            "/org/freedesktop/systemd1"
+            "org.freedesktop.systemd1.Manager"
+            "Reload"
+          ];
+        };
 
-        # "systemd-user-stop-not-found" = {
-        #   after = ["systemd-user-reload"];
-        #   command = [
-        #     (lib.getExe (pkgs.writeShellScriptBin "systemd-stop-lingering" ''
-        #       systemctl --user list-units --state=not-found --plain --no-legend \
-        #       | ${lib.getExe pkgs.gnugrep} -v inactive \
-        #       | sed 's/\s\+.*//' \
-        #       | while IFS= read -r line; do
-        #         systemctl --user stop $line
-        #       done
-        #     ''))
-        #   ];
-        # };
+        "systemd-generate" = {
+          before = [
+            "static"
+            "xdg-config-path-systemd/user"
+          ];
+          command = [
+            # "${(lib.getExe config.bin.activation-manager)}"
+            "activation-manager"
+            "--verbose"
+            "systemd-generate"
+            "--incoming"
+            "${config.systemd.user.allUnits}"
+          ];
+          generatesNodes = true;
+        };
       }
     ];
 

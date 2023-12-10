@@ -78,6 +78,7 @@
 
     dag.nodes = lib.mapAttrs' (name: value:
       lib.nameValuePair "${cfgName}-${name}" {
+        after = ["static"];
         command = [
           (
             if !value.recursive

@@ -1,93 +1,70 @@
 import argparse
 import sys
-import json
 from pathlib import Path
-from os import environ
-import subprocess
-from typing import Any, Dict, List
-import networkx as nx
+from . import activate, systemd
 import logging
-from logging import info, debug, error
+from os import environ
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
+    toplevel_parser = argparse.ArgumentParser(
         prog="activation-manager",
         description="Activation manager CLI",
-        epilog="Reference implementation of the manifest.json activator"
     )
-    parser.add_argument("-m", "--manifest", required=True, type=Path)
-    parser.add_argument("-v", "--verbose", action="store_true")
-    args = parser.parse_args()
+    toplevel_parser.add_argument("-v", "--verbose", action="store_true")
+
+    subparsers= toplevel_parser.add_subparsers(
+        title="subcommands",
+        required=True,
+        dest="subcommand",
+    )
+
+    activate_parser = subparsers.add_parser(
+        "activate",
+        help="activate a manifest",
+    )
+    activate_parser.add_argument("-m", "--manifest", required=True, type=Path)
+
+    systemd_generate_parser = subparsers.add_parser(
+        "systemd-generate",
+        help="systemd activator for internal use"
+    )
+    systemd_generate_parser.add_argument("-i", "--incoming", required=True, type=Path)
+    systemd_generate_parser.add_argument("-c", "--current", required=False, type=Path, default=Path(
+        environ["HOME"],
+        ".config",
+        "systemd",
+        "user"
+    ))
+
+    systemd_handle_unit_parser = subparsers.add_parser(
+        "systemd-handle-unit",
+        help="systemd activator for internal use"
+    )
+    systemd_handle_unit_parser.add_argument("-u", "--unit", required=True, type=str)
+    systemd_handle_unit_parser.add_argument("-a", "--action", required=True, type=str)
+
+
+    args = toplevel_parser.parse_args()
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
         format="%(levelname)s %(message)s",
+        stream=sys.stderr,
     )
 
-    info("Welcome to a activation-manager")
+    match args.subcommand:
+        case "activate":
+            return activate.main(args)
 
+        case "systemd-generate":
+            return systemd.generate(args)
 
-    manifest_file: Path = args.manifest
+        case "systemd-handle-unit":
+            return systemd.handle_unit(args)
 
-    with open(manifest_file, "r") as f:
-        manifest = json.load(f)
-
-
-    for (node, env_var) in [("root", "AM_ROOT"), ("static", "AM_STATIC")]:
-        cmd: List[str]
-        abs: str
-        debug(f":: {env_var}")
-        if cmd := manifest[node]["location"]["command"]:
-            debug(f"{cmd=}")
-            res = subprocess.run(cmd , capture_output=True)
-
-            debug(f"{res.stdout=}")
-            debug(f"{res.stderr=}")
-
-            if res.returncode != 0:
-                return res.returncode
-
-            environ[env_var] = res.stdout.decode("utf-8").strip()
-
-        elif abs := manifest[node]["location"]["absolute"]:
-            environ[env_var] = abs
-
-        else:
-            error(f"Neither command nor absolute path specified for {env_var}")
+        case _:
+            print("Not implemented")
             return 1
-
-        debug(f"{environ[env_var]=}")
-
-    cmd = [
-        "nix",
-        "build",
-        manifest["static"]["result"],
-        "--out-link",
-        environ["AM_STATIC"],
-    ]
-    subprocess.run(cmd, check=True)
-
-    G = nx.DiGraph()
-
-    for (node_name, node_value) in manifest["dag"]["nodes"].items():
-        G.add_node(node_name, **node_value)
-
-    for (node_name, node_value) in manifest["dag"]["nodes"].items():
-        after: List[str] = node_value["after"]
-
-        for a in after:
-            G.add_edge(a, node_name)
-
-
-    for node_name in nx.topological_sort(G):
-        # check for None
-        info(f"Running activation for {node_name}")
-        if cmd := G.nodes[node_name]["command"]:
-            cmd_human = " ".join(cmd)
-            info(f"$ {cmd_human}")
-            subprocess.run(cmd, check=True)
-
-    return(0)
 
 if __name__ == "__main__":
     sys.exit(main())

@@ -1,27 +1,47 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "main",
+            "name": "activate",
             "type": "python",
             "request": "launch",
             "module": "activation_manager",
             "justMyCode": true,
             "args": [
-                "-m",
-                "./result"
+                "--verbose",
+                "activate",
+                "--manifest",
+                "./result-manifest"
             ]
         },
         {
-            "name": "systemd",
+            "name": "systemd-generate",
             "type": "python",
             "request": "launch",
-            "module": "activation_manager.systemd",
+            "module": "activation_manager",
             "justMyCode": true,
             "args": [
+                "--verbose",
+                "systemd",
+                "--incoming",
+                "./result-incoming",
+                "--current",
+                "${userHome}/.config/systemd/user"
+            ]
+        },
+        {
+            "name": "systemd-handle-unit",
+            "type": "python",
+            "request": "launch",
+            "module": "activation_manager",
+            "justMyCode": true,
+            "args": [
+                "--verbose",
+                "systemd-handle-unit",
+                "--unit",
+                "server.service",
+                "--action",
+                "destroy"
             ]
         }
     ]
