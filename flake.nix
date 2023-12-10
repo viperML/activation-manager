@@ -39,7 +39,7 @@
               ];
             })
             .overrideAttrs (_: {
-              passthru = eval;
+              passthru = {inherit eval;};
             });
       });
 
