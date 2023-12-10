@@ -30,9 +30,9 @@ in {
       paths = [
         config.bin.activation-manager
         config.bin.activate
-        (pkgs.runCommandLocal "am-manifest" {} ''
+        (pkgs.runCommandLocal "activation-manager-manifest" {} ''
           mkdir -p $out/etc
-          ln -vsfT ${config.manifest} $out/etc/manifest.json
+          ln -vsfT ${config.manifest} $out/etc/activation-manager-manifest.json
         '')
       ];
     };

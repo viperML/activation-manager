@@ -4,6 +4,8 @@ from pathlib import Path
 from . import activate, systemd
 import logging
 from os import environ
+from ansi.colour import fg
+import colorlog
 
 def main() -> int:
     toplevel_parser = argparse.ArgumentParser(
@@ -46,10 +48,23 @@ def main() -> int:
 
     args = toplevel_parser.parse_args()
 
+    handler = colorlog.StreamHandler()
+    handler.setFormatter(colorlog.ColoredFormatter(
+	    '%(log_color)s%(levelname)s%(reset)s %(message)s',
+        	log_colors={
+            'DEBUG':    'cyan',
+            'INFO':     'green',
+            'WARNING':  'yellow',
+            'ERROR':    'red',
+            'CRITICAL': 'red,bg_white',
+        },
+        reset=True
+        )
+    )
+    handler.setStream(sys.stderr)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
-        format="%(levelname)s %(message)s",
-        stream=sys.stderr,
+        handlers=[handler]
     )
 
     match args.subcommand:

@@ -5,6 +5,8 @@
   networkx,
   dasbus,
   makeWrapper,
+  ansi,
+  colorlog,
 }:
 buildPythonPackage {
   pname = "activation-manager";
@@ -27,6 +29,8 @@ buildPythonPackage {
   propagatedBuildInputs = [
     networkx
     dasbus
+    ansi
+    colorlog
   ];
   postFixup = ''
     wrapProgram $out/bin/activation-manager --prefix PATH : "$out/bin"

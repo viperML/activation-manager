@@ -7,6 +7,10 @@ import subprocess
 from typing import Any, List
 import networkx as nx
 from logging import info, debug, error
+from ansi.colour import fg
+import io
+import sys
+from . import escape_ansi
 
 def fill_graph(G: nx.DiGraph, nodes: dict[str, Any]):
     for (node_name, node_value) in nodes.items():
@@ -67,7 +71,7 @@ def main(args: Namespace) -> int:
 
         for node_name in nx.topological_sort(G):
             # check for None
-            info(f"Running activation for {node_name}")
+            info(f"Activating: {fg.bold}{node_name}")
             try:
                 cmd = G.nodes[node_name]["command"]
             except KeyError:
@@ -75,10 +79,18 @@ def main(args: Namespace) -> int:
                 continue
 
             cmd_human = " ".join(cmd)
-            info(f"$ {cmd_human}")
+            print(f"{fg.brightblack}{node_name}> {cmd_human}", file=sys.stderr)
 
             if not G.nodes[node_name]["generatesNodes"]:
-                subprocess.run(cmd, check=True)
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                for line in io.TextIOWrapper(proc.stdout, encoding="utf-8"):
+                    l = escape_ansi(line.strip())
+                    print(f"{fg.brightblack}{node_name}> {l}", file=sys.stderr)
+
+                if proc.wait() != 0:
+                    error(f"{node_name} failed")
+                    return 1
+
             else:
                 res = subprocess.run(
                     cmd,
@@ -86,10 +98,10 @@ def main(args: Namespace) -> int:
                     text=True
                 )
 
-                print(res.stdout)
-                print(res.stderr)
+                # print(res.stdout)
+                # print(res.stderr)
                 new_nodes = json.loads(res.stdout)
-                info(f"New nodes: {new_nodes}")
+                debug(f"new nodes: {new_nodes}")
                 fill_graph(G_next, new_nodes)
                 pass
 
