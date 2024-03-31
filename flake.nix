@@ -27,7 +27,7 @@
                 modules = [
                   ./modules
                   # ./modules/home
-                  # ./test/home.nix
+                  ./test/home.nix
                 ];
               };
             in

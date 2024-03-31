@@ -1,4 +1,3 @@
-# not a module
 {
   pkgs,
   lib,
@@ -7,7 +6,6 @@
     (lib)
     mkOption
     types
-    mdDoc
     ;
 
   pathModule = defaultPrefix: {
@@ -19,29 +17,29 @@
       enable = mkOption {
         type = types.bool;
         default = true;
-        description = mdDoc "Whether this path is used or not";
+        description = "Whether this path is used or not";
       };
 
       source = mkOption {
         type = types.path;
-        description = mdDoc "Source path";
+        description =  "Source path";
       };
 
       destination = mkOption {
         type = types.str;
-        description = mdDoc "Destination path";
+        description = "Destination path";
         default = name;
       };
 
       prefix = mkOption {
         type = types.str;
-        description = mdDoc "Prefix to prepend to destination path";
+        description = "Prefix to prepend to destination path";
         default = defaultPrefix;
       };
 
       recursive = mkOption {
         type = types.bool;
-        description = mdDoc ''
+        description = ''
           If the source is a directory, try to walk it linking all the inmediate files or symlink leaves.
 
           Useful for keeping part of a folder mutable (e.g. ~/.config/systemd).
@@ -76,7 +74,7 @@
       set +x
     '';
 
-    dag.nodes = lib.mapAttrs' (name: value:
+    nodes = lib.mapAttrs' (name: value:
       lib.nameValuePair "${cfgName}-${name}" {
         after = ["static"];
         command = [

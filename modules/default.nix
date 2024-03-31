@@ -3,20 +3,14 @@
   lib,
   pkgs,
   ...
-}: let
-  inherit
-    (lib)
-    mkOption
-    mdDoc
-    types
-    ;
-in {
+}:
+let
+  inherit (lib) mkOption mdDoc types;
+in
+{
   _module.args = {
     # Load nixpkgs' utils
-    utils = import "${pkgs.path}/nixos/lib/utils.nix" {inherit lib config pkgs;};
-    amLib = {
-      # placeholder
-    };
+    utils = import "${pkgs.path}/nixos/lib/utils.nix" { inherit lib config pkgs; };
   };
 
   imports = [
@@ -27,6 +21,6 @@ in {
     ./core/bin.nix
 
     # Functionality
-    # ./path.nix
+    ./path.nix
   ];
 }

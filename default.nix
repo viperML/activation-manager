@@ -1,37 +1,29 @@
-lib: let
-  eval = {
-    pkgs,
-    modules ? [],
+lib:
+let
+  eval =
+    {
+      pkgs,
+      modules ? [ ],
     # specialArgs ? {},
-  }:
+    }:
     lib.evalModules {
-      modules = [./modules] ++ modules;
+      modules = [ ./modules ] ++ modules;
       # specialArgs =
       #   {
       #     inherit pkgs;
       #   }
       #   // specialArgs;
-      specialArgs =
-        {
-          inherit pkgs;
-        }
-        // (import ./modules/.mkPath.nix {inherit pkgs lib;});
+      specialArgs = {
+        inherit pkgs;
+        amUtils = { } // (import ./utils/mkPath.nix { inherit pkgs lib; });
+      };
     };
-in {
+in
+{
   lib = {
     __functor = _: eval;
     inherit eval;
-    home-bundle = args:
-      (eval (args
-        // {
-          modules =
-            args.modules
-            ++ [
-              ./modules/home
-            ];
-        }))
-      .config
-      .bin
-      .bundle;
+    home-bundle =
+      args: (eval (args // { modules = args.modules ++ [ ./modules/home ]; })).config.bin.bundle;
   };
 }
