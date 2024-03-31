@@ -11,34 +11,19 @@
     types
     ;
 in {
+  _module.args = {
+    # Load nixpkgs' utils
+    utils = import "${pkgs.path}/nixos/lib/utils.nix" {inherit lib config pkgs;};
+  };
+
   imports = [
-    # Core
-    ./dag.nix
-    ./static.nix
-    ./root.nix
-    ./utils.nix
+    ./core/root.nix
+    ./core/nodes.nix
+    ./core/static.nix
+    ./core/manifest.nix
 
     # Functionality
-    ./path.nix
-    ./bin.nix
+    # ./path.nix
+    # ./bin.nix
   ];
-
-  options = {
-    manifest = mkOption {
-      type = types.package;
-      description = mdDoc "Resulting manifest of all entries.";
-    };
-
-    flavor = mkOption {
-      type = types.enum ["home"];
-      description = mdDoc "Specific configuration for the task.";
-    };
-  };
-
-  config = {
-    manifest = pkgs.writers.writeJSON "activation-manager-manifest.json" {
-      version = "0";
-      inherit (config) dag root static;
-    };
-  };
 }
