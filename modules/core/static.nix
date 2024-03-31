@@ -28,7 +28,7 @@ in
         default = [
           "sh"
           "-c"
-          "printf \"$AM_ROOT/.config/static\""
+          ''echo "$AM_ROOT/.config/activation-manager-static"''
         ];
       };
       # location = {
