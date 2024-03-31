@@ -33,7 +33,7 @@ in
             };
 
             command = mkOption {
-              type = types.nullOr (types.listOf types.str);
+              type = types.nullOr (types.listOf (types.either types.str types.package));
               default = null;
               description = ''
                 Command to execute. Note that this is passed directly to a system call,

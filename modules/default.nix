@@ -14,6 +14,9 @@ in {
   _module.args = {
     # Load nixpkgs' utils
     utils = import "${pkgs.path}/nixos/lib/utils.nix" {inherit lib config pkgs;};
+    amLib = {
+      # placeholder
+    };
   };
 
   imports = [
@@ -21,9 +24,9 @@ in {
     ./core/nodes.nix
     ./core/static.nix
     ./core/manifest.nix
+    ./core/bin.nix
 
     # Functionality
     # ./path.nix
-    # ./bin.nix
   ];
 }

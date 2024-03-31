@@ -31,31 +31,14 @@ in
           ''echo "$AM_ROOT/.config/activation-manager-static"''
         ];
       };
-      # location = {
-      #   absolute = mkOption {
-      #     type = types.nullOr types.path;
-      #     default = null;
-      #     description = mdDoc "Path to the static files location";
-      #   };
-
-      #   command = mkOption {
-      #     type = types.nullOr (types.listOf types.str);
-      #     description = mdDoc "Command to get the static files location. $AM_ROOT is available";
-      #     default = null;
-      #   };
-      # };
     };
   };
 
   config = {
     nodes."static" = {
-      command = [
-        "sh"
-        "-c"
-        ''
-          nix build ${config.static.result} --out-link "$AM_STATIC"
-        ''
-      ];
+      command = lib.singleton (pkgs.writeShellScript "static" ''
+        nix build ${config.static.result} --out-link "$AM_STATIC"
+      '');
     };
 
     static = {

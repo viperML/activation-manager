@@ -4,7 +4,7 @@
   lib,
   ...
 }: let
-  inherit (lib) mkOption mdDoc types;
+  inherit (lib) mkOption types;
 in {
   options.bin = {
     activation-manager = mkOption {
@@ -21,7 +21,7 @@ in {
   };
 
   config.bin = {
-    activation-manager = pkgs.python3.pkgs.callPackage ../package.nix {};
+    activation-manager = pkgs.callPackage ../package.nix {};
     activate = pkgs.writeShellScriptBin "activate" ''
       ${lib.getExe config.bin.activation-manager} "$@" activate --manifest ${config.manifest}
     '';
