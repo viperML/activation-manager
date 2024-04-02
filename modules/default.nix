@@ -4,9 +4,6 @@
   pkgs,
   ...
 }:
-let
-  inherit (lib) mkOption mdDoc types;
-in
 {
   _module.args = {
     # Load nixpkgs' utils
@@ -14,13 +11,9 @@ in
   };
 
   imports = [
-    ./core/root.nix
-    ./core/nodes.nix
-    ./core/static.nix
-    ./core/manifest.nix
-    ./core/bin.nix
+    ./core
 
-    # Functionality
-    ./path.nix
+    # home specific functionality
+    ./home
   ];
 }

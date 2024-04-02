@@ -23,7 +23,7 @@ struct ActivateArgs {
 #[derive(Debug, Deserialize)]
 struct Config {
     version: String,
-    root: RootConfig,
+    // root: RootConfig,
     r#static: StaticConfig,
     nodes: HashMap<String, NodeConfig>,
 }
@@ -86,7 +86,7 @@ impl ActivateArgs {
 
         // Setup root dir
         for (location, var) in [
-            (&config.root.location, "AM_ROOT"),
+            // (&config.root.location, "AM_ROOT"),
             (&config.r#static.location, "AM_STATIC"),
         ] {
             match location {

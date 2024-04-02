@@ -6,10 +6,34 @@
 }:
 let
   inherit (lib) mkOption types;
+
+  commandNode = types.submodule (
+    { config, name, ... }:
+    {
+      options = {
+        command = mkOption { type = with types; listOf (either package str); };
+      };
+    }
+  );
+
+  linkNode = types.submodule (
+    { config, name, ... }:
+    {
+      options = {
+        source = mkOption { type = with types; path; };
+        destination = mkOption { type = with types; path; };
+      };
+    }
+  );
 in
 {
+  options.nodes2 = mkOption {
+    default = { };
+    type = types.attrsOf (types.either commandNode linkNode );
+  };
+
   options.nodes = mkOption {
-    description =  "Activation nodes";
+    description = "Activation nodes";
     default = { };
     type = types.attrsOf (
       types.submodule (

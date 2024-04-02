@@ -1,6 +1,6 @@
 {
   imports = [
-    ./base.nix
-    ./systemd.nix
+    ./path.nix
+    # ./systemd.nix
   ];
 }

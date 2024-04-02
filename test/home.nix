@@ -6,5 +6,9 @@
   #   serviceConfig.ExecStart = "${pkgs.coreutils}/bin/tail -f /etc/hosts";
   #   # serviceConfig.ExecStart = "${pkgs.coreutils}/bin/tail -f /etc/passwd";
   # };
-  path."file".source = "/etc/hosts";
+  # home.paths."file".source = "/etc/hosts";
+  nodes2."foo" = {
+    source = "/foo";
+    destination = "/bar";
+  };
 }

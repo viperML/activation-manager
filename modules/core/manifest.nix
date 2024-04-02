@@ -24,7 +24,7 @@ in
   config = {
     manifest = pkgs.writers.writeJSON "activation-manager-manifest.json" {
       version = "0";
-      inherit (config) nodes root static;
+      inherit (config) nodes static nodes2;
     };
   };
 }

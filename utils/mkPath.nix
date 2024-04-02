@@ -1,3 +1,6 @@
+# This file creates the options and config needed for the path option
+# A path option is a submodule where users can set paths to be activated
+# to the static dir, like nixos's environment.etc or home-manager's home.file
 {
   pkgs,
   lib,
