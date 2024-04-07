@@ -18,8 +18,9 @@
     (import ./. nixpkgs.lib)
     // {
       packages = forAllSystems (
-        pkgs: {
+        pkgs: rec {
           default = pkgs.callPackage ./package.nix { };
+          dev = default.overrideAttrs (_: {src=null;});
           example-home =
             let
               eval = self.lib {
@@ -48,11 +49,12 @@
             with pkgs;
             mkShell {
               packages = [
-
                 cargo
                 rustc
                 rustfmt
                 rust-analyzer-unwrapped
+                lua5_4
+                lua-language-server
               ];
               env.RUST_SRC_PATH = "${rustPlatform.rustLibSrc}";
             };

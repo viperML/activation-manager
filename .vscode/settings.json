@@ -1,3 +1,5 @@
 {
-    "python.defaultInterpreterPath": "${workspaceFolder}/python3",
+    "Lua.workspace.userThirdParty": [
+        "lua"
+    ],
 }
