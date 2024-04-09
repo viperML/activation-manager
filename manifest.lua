@@ -1,26 +1,18 @@
 local am = require("activation-manager")
+am.debug("Hello")
 
-am.debug("xd")
+local nodes = {}
 
--- print("hello")
+table.insert(nodes, {
+  "static",
+})
 
--- nodes.add {
---   name = "static",
---   before = {},
--- }
-local nodes = am.Nodes()
-
-nodes:add {
-  name = "static",
-}
-
-nodes:add {
-  name = "static-env",
-  after = {"static"}
-}
-
--- nodes.add {
---   name = "foo"
--- }
+table.insert(nodes, {
+  "static-env",
+  function()
+    am.debug("Running static-env")
+  end,
+  after = {"static"},
+})
 
 return nodes

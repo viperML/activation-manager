@@ -9,64 +9,10 @@ use mlua::Table;
 use mlua::UserData;
 use mlua::Value;
 use serde::Serialize;
+use tracing::debug;
+
 
 const LIB_NAME: &str = "activation-manager";
-
-type NodesInner = Arc<Mutex<Vec<Node>>>;
-
-#[derive(Debug, Clone, FromLua, Default)]
-struct Nodes(NodesInner);
-
-impl Deref for Nodes {
-    type Target = NodesInner;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-#[derive(Debug)]
-struct Node
-<'lua>
-{
-    name: String,
-    before: Vec<String>,
-    after: Vec<String>,
-
-    // func: LuaFunction<'lua>,
-}
-
-impl UserData for Nodes {
-    fn add_methods<'lua, M: LuaUserDataMethods<'lua, Self>>(methods: &mut M) {
-        methods.add_method("add", |ctx, this, input: Table| {
-            let mut nodes = this
-                .lock()
-                .map_err(|_| LuaError::RuntimeError("poisoned mutex".to_owned()))?;
-
-            let new_node = Node {
-                name: input.get("name").context("missing input field: name")?,
-                after: {
-                    match input.get::<_, Table>("after") {
-                        Ok(t) => table_to_vec(ctx, t)?,
-                        Err(_) => Default::default(),
-                    }
-                },
-                before: {
-                    match input.get::<_, Table>("before") {
-                        Ok(t) => table_to_vec(ctx, t)?,
-                        Err(_) => Default::default(),
-                    }
-                },
-                ..todo!()
-            };
-
-            nodes.push(new_node);
-
-            tracing::debug!(?nodes);
-
-            Ok(())
-        });
-    }
-}
 
 pub(crate) fn table_to_vec<'lua, T: FromLua<'lua>>(
     ctx: &'lua Lua,
@@ -95,9 +41,10 @@ pub(crate) fn init() -> Result<mlua::Lua> {
     lib.set("version", env!("CARGO_PKG_VERSION"))?;
 
     // add!(lua, debug);
-    lib.set("debug", lua.create_function(debug)?)?;
-
-    lib.set("Nodes", lua.create_function(|_, ()| Ok(Nodes::default()))?)?;
+    lib.set("debug", lua.create_function(|_, v: Value| {
+        debug!("{v:?}");
+        Ok(())
+    })?)?;
 
     drop(lib);
     drop(lua_globals);
@@ -107,7 +54,32 @@ pub(crate) fn init() -> Result<mlua::Lua> {
     Ok(lua)
 }
 
-fn debug<'lua>(ctx: &'lua Lua, message: Value) -> mlua::Result<impl IntoLua<'lua>> {
-    tracing::debug!("{message:?}");
-    Ok(Nil)
+/// From a table, return the first unnamed value from the table for type T, or by the name provided
+pub(crate) fn get_t<'lua, 's, T>(ctx: &'lua Lua, table: Table<'lua>, name: Option<&'s str>) -> mlua::Result<T>
+where
+    'lua: 's,
+    T: FromLua<'lua>,
+{
+    for pairs in table.pairs::<Value, T>() {
+        match pairs {
+            Ok((index, value)) => {
+                match (name, index) {
+                    (None, Value::Integer(_)) => return Ok(value),
+                    (Some(name), Value::String(index)) => {
+                        let index = index.to_str()?;
+                        if *name == *index {
+                            return Ok(value)
+                        }
+                    }
+                    _ => continue
+                }
+            }
+            Err(err) => match err {
+                LuaError::FromLuaConversionError { .. } => continue,
+                other => return Err(other)
+            }
+        }
+    }
+
+    return Err(LuaError::RuntimeError(format!("Couldn't find value of type {} in table", std::any::type_name::<T>())));
 }
