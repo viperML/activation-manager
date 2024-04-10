@@ -3,9 +3,9 @@ am.debug("Hello")
 
 local nodes = {}
 
-table.insert(nodes, {
-  "static",
-})
+-- table.insert(nodes, {
+--   "static",
+-- })
 
 table.insert(nodes, {
   "static-env",

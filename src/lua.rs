@@ -1,3 +1,4 @@
+use std::fmt;
 use std::ops::Deref;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -10,7 +11,8 @@ use mlua::UserData;
 use mlua::Value;
 use serde::Serialize;
 use tracing::debug;
-
+use tracing::instrument;
+use tracing::trace;
 
 const LIB_NAME: &str = "activation-manager";
 
@@ -41,10 +43,13 @@ pub(crate) fn init() -> Result<mlua::Lua> {
     lib.set("version", env!("CARGO_PKG_VERSION"))?;
 
     // add!(lua, debug);
-    lib.set("debug", lua.create_function(|_, v: Value| {
-        debug!("{v:?}");
-        Ok(())
-    })?)?;
+    lib.set(
+        "debug",
+        lua.create_function(|_, v: Value| {
+            debug!("{v:?}");
+            Ok(())
+        })?,
+    )?;
 
     drop(lib);
     drop(lua_globals);
@@ -55,31 +60,37 @@ pub(crate) fn init() -> Result<mlua::Lua> {
 }
 
 /// From a table, return the first unnamed value from the table for type T, or by the name provided
-pub(crate) fn get_t<'lua, 's, T>(ctx: &'lua Lua, table: Table<'lua>, name: Option<&'s str>) -> mlua::Result<T>
+#[instrument(skip(ctx, table), level = "trace")]
+pub(crate) fn get_t<'lua, 's, T>(
+    ctx: &'lua Lua,
+    table: Table<'lua>,
+    name: Option<&'s str>,
+) -> mlua::Result<T>
 where
     'lua: 's,
-    T: FromLua<'lua>,
+    T: FromLua<'lua> + fmt::Debug,
 {
-    for pairs in table.pairs::<Value, T>() {
-        match pairs {
-            Ok((index, value)) => {
-                match (name, index) {
-                    (None, Value::Integer(_)) => return Ok(value),
-                    (Some(name), Value::String(index)) => {
-                        let index = index.to_str()?;
-                        if *name == *index {
-                            return Ok(value)
-                        }
-                    }
-                    _ => continue
+    for pairs in table.pairs::<Value, Value>() {
+        trace!(?pairs);
+        let (index, value) = pairs?;
+        match (name, index, T::from_lua(value, &ctx)) {
+            (Some(name), Value::String(index), Ok(value)) => {
+                let index = index.to_str()?;
+                if *name == *index {
+                    return Ok(value);
                 }
             }
-            Err(err) => match err {
-                LuaError::FromLuaConversionError { .. } => continue,
-                other => return Err(other)
-            }
+            (Some(_), _, _) => {}
+            (None, _, Ok(value)) => return Ok(value),
+            (_, _, Err(err)) => match err {
+                LuaError::FromLuaConversionError { .. } => {}
+                other => return Err(other),
+            },
         }
     }
 
-    return Err(LuaError::RuntimeError(format!("Couldn't find value of type {} in table", std::any::type_name::<T>())));
+    return Err(LuaError::RuntimeError(format!(
+        "Couldn't find value of type {} in table",
+        std::any::type_name::<T>()
+    )));
 }

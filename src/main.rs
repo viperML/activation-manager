@@ -55,12 +55,13 @@ impl ActivateArgs {
                 let span = span!(Level::DEBUG, "table", %i);
                 let _enter = span.enter();
 
-                let v = crate::lua::get_t::<LuaFunction>(&lua, t, Some("static"))?;
-
                 // for (j, pairs) in t.pairs::<LuaValue, LuaValue>().enumerate() {
                 //     let (k,v) = pairs?;
                 //     debug!(?j, ?k, ?v);
                 // }
+
+                let v = crate::lua::get_t::<LuaFunction>(&lua, t, None)?;
+                debug!(?v);
             }
         }
 
