@@ -6,7 +6,7 @@ use eyre::{bail, Context, Result};
 use mlua::prelude::*;
 use petgraph::prelude::*;
 use tracing_error::ErrorLayer;
-use std::{collections::HashMap, fs::File, path::PathBuf};
+use std::{collections::HashMap, fs::File, path::PathBuf, sync::{Arc, Mutex}};
 use tracing::{debug, span};
 use mlua::Table;
 use tracing::Level;
@@ -60,8 +60,13 @@ impl ActivateArgs {
                 //     debug!(?j, ?k, ?v);
                 // }
 
-                let v = crate::lua::get_t::<LuaFunction>(&lua, t, None)?;
-                debug!(?v);
+                let func = crate::lua::get_t::<LuaFunction>(&lua, t, None)?;
+                debug!(?func);
+                let x = Arc::new(Mutex::new(func));
+                let y = x.clone();
+                std::thread::spawn(move || {
+                    let y = y;
+                });
             }
         }
 
