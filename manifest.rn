@@ -1,0 +1,4 @@
+pub async fn main() {
+    let a = time::sleep(time::Duration::from_secs(1));
+    dbg(a)
+}

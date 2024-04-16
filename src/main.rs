@@ -1,29 +1,23 @@
 // #![allow(dead_code, unused_imports)] // TODO remove
-mod lua;
+mod eval;
 
-use clap::{Args, Parser};
-use eyre::{bail, Context, Result};
-use mlua::prelude::*;
-use petgraph::prelude::*;
-use tracing_error::ErrorLayer;
-use std::{collections::HashMap, fs::File, path::PathBuf, sync::{Arc, Mutex}};
-use tracing::{debug, span};
-use mlua::Table;
-use tracing::Level;
+use eyre::Result;
+use std::path::PathBuf;
 
-#[derive(Debug, Parser)]
+#[derive(Debug, clap::Parser)]
 enum AppArgs {
     Activate(ActivateArgs),
 }
 
-#[derive(Debug, Args)]
+#[derive(Debug, clap::Args)]
 struct ActivateArgs {
     manifest: PathBuf,
 }
 
 fn main() -> Result<()> {
-    color_eyre::install()?;
     {
+        color_eyre::install()?;
+        use tracing_error::ErrorLayer;
         use tracing_subscriber::{fmt, prelude::*, EnvFilter};
         tracing_subscriber::registry()
             .with(fmt::layer().without_time().with_line_number(true))
@@ -32,44 +26,11 @@ fn main() -> Result<()> {
             .init();
     }
 
-    let args = AppArgs::parse();
+    let args = <AppArgs as clap::Parser>::parse();
 
-    match args {
-        AppArgs::Activate(args) => args.run(),
-    }
-}
-
-impl ActivateArgs {
-    fn run(self) -> eyre::Result<()> {
-        let lua = crate::lua::init()?;
-
-        let res: Table = lua.load(self.manifest.as_path())
-            .eval()
-            .wrap_err("Evaluating manifest")?;
-
-        for (i, pairs) in res.pairs::<LuaValue, LuaValue>().enumerate() {
-            let (k,v) = pairs?;
-            debug!(?i, ?k, ?v);
-
-            if let LuaValue::Table(t) = v {
-                let span = span!(Level::DEBUG, "table", %i);
-                let _enter = span.enter();
-
-                // for (j, pairs) in t.pairs::<LuaValue, LuaValue>().enumerate() {
-                //     let (k,v) = pairs?;
-                //     debug!(?j, ?k, ?v);
-                // }
-
-                let func = crate::lua::get_t::<LuaFunction>(&lua, t, None)?;
-                debug!(?func);
-                let x = Arc::new(Mutex::new(func));
-                let y = x.clone();
-                std::thread::spawn(move || {
-                    let y = y;
-                });
-            }
+    tokio::runtime::Runtime::new()?.block_on(async {
+        match args {
+            AppArgs::Activate(args) => crate::eval::eval(args.manifest).await,
         }
-
-        Ok(())
-    }
+    })
 }

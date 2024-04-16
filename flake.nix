@@ -53,8 +53,7 @@
                 rustc
                 rustfmt
                 rust-analyzer-unwrapped
-                lua5_4
-                lua-language-server
+                rune
               ];
               env.RUST_SRC_PATH = "${rustPlatform.rustLibSrc}";
             };
