@@ -1,4 +1,26 @@
-pub async fn main() {
-    let a = time::sleep(time::Duration::from_secs(1));
-    dbg(a)
+struct Node {
+    name,
+    before,
+    after,
+    action,
 }
+
+pub fn mk_nodes() {[
+    (Node {
+        name: "foo",
+        before: [],
+        after: [],
+        action: async || {
+            let a = time::sleep(time::Duration::from_secs(1));
+            a.await;
+        }
+    }),
+    (Node {
+        name: "bar",
+        before: [],
+        after: ["bar"],
+        action: async || {
+            dbg(Node)
+        }
+    }),
+]}
