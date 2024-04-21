@@ -1,9 +1,9 @@
-struct Node {
-    name,
-    before,
-    after,
-    action,
-}
+// struct Node {
+//     name,
+//     before,
+//     after,
+//     action,
+// }
 
 pub fn mk_nodes() {[
     (Node {
@@ -13,14 +13,15 @@ pub fn mk_nodes() {[
         action: async || {
             let a = time::sleep(time::Duration::from_secs(1));
             a.await;
+            println("hello");
         }
     }),
-    (Node {
-        name: "bar",
-        before: [],
-        after: ["bar"],
-        action: async || {
-            dbg(Node)
-        }
-    }),
+    // (Node {
+    //     name: "bar",
+    //     before: [],
+    //     after: ["bar"],
+    //     // action: async || {
+    //     //     dbg(Node)
+    //     // }
+    // }),
 ]}
