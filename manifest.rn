@@ -10,18 +10,22 @@ pub fn mk_nodes() {[
         name: "foo",
         before: [],
         after: [],
-        action: async || {
+        action: async move || {
+            println("starting foo");
             let a = time::sleep(time::Duration::from_secs(1));
             a.await;
-            println("hello");
+            println("done foo")
         }
     }),
-    // (Node {
-    //     name: "bar",
-    //     before: [],
-    //     after: ["bar"],
-    //     // action: async || {
-    //     //     dbg(Node)
-    //     // }
-    // }),
+    (Node {
+        name: "bar",
+        before: [],
+        after: ["bar"],
+        action: async move || {
+            println("starting bar");
+            let a = time::sleep(time::Duration::from_secs(1));
+            a.await;
+            println("done bar")
+        }
+    }),
 ]}

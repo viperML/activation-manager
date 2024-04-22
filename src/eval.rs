@@ -1,11 +1,11 @@
 use core::fmt::{Debug, Formatter};
 use rune::{
     alloc::clone::TryClone,
-    runtime::{Function, Shared},
+    runtime::{Function, Shared, SyncFunction},
     termcolor::{ColorChoice, StandardStream},
     Any, Diagnostics, Module, Source, Sources, Value, Vm,
 };
-use std::{any::type_name, borrow::Borrow, path::Path, sync::Arc};
+use std::{any::type_name, borrow::Borrow, path::Path, sync::Arc, time::Duration};
 use tokio::runtime::Runtime;
 use tracing::debug;
 
@@ -63,13 +63,15 @@ pub async fn eval<P: AsRef<Path>>(manifest: P) -> Result<()> {
     debug!(?nodes);
 
     for node in nodes {
-        let f = node.action.take()?;
-        debug!(?f);
-
-        let vm = vm.try_clone()?;
-        let fut = f.async_send_call(());
-        let res: Value = fut.await.unwrap();
+        let f = node.action.take()?.into_sync().unwrap();
+        let exec = vm.try_clone()?.send_execute(f.type_hash(), ())?;
+        let res = tokio::spawn(async {
+            let res = exec.async_complete().await.unwrap();
+            println!("done");
+        });
     }
+
+    tokio::time::sleep(Duration::from_secs(3)).await;
 
     Ok(())
 }
