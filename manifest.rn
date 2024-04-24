@@ -1,31 +1,40 @@
-// struct Node {
-//     name,
-//     before,
-//     after,
-//     action,
-// }
+struct Node {
+    name,
+    // before,
+    // after,
+    action,
+}
 
 pub fn mk_nodes() {[
     (Node {
         name: "foo",
-        before: [],
-        after: [],
+        // before: [],
+        // after: [],
         action: async move || {
-            println("starting foo");
+            println("starting first");
             let a = time::sleep(time::Duration::from_secs(1));
             a.await;
-            println("done foo")
+            return [
+                (Node {
+                    name: "subfoo",
+                    // before: [],
+                    // after: [],
+                    action: async move || {
+                        println("starting second")
+                    }
+                })
+            ]
         }
     }),
-    (Node {
-        name: "bar",
-        before: [],
-        after: ["bar"],
-        action: async move || {
-            println("starting bar");
-            let a = time::sleep(time::Duration::from_secs(1));
-            a.await;
-            println("done bar")
-        }
-    }),
+    // (Node {
+    //     name: "bar",
+    //     before: [],
+    //     after: ["bar"],
+    //     action: async move || {
+    //         println("starting bar");
+    //         let a = time::sleep(time::Duration::from_secs(1));
+    //         a.await;
+    //         println("done bar")
+    //     }
+    // }),
 ]}
