@@ -1,33 +1,34 @@
 pub fn mk_nodes() {[
     (Node {
-        name: "foo",
+        name: "first",
         // before: [],
-        // after: [],
+        after: [],
         action: async move || {
             println("starting first");
             let a = time::sleep(time::Duration::from_secs(1));
             a.await;
-            return [
-                (Node {
-                    name: "subfoo",
-                    // before: [],
-                    // after: [],
-                    action: async move || {
-                        println("starting second")
-                    }
-                })
-            ]
+            println("finish first");
+            // return [
+            //     (Node {
+            //         name: "subfoo",
+            //         // before: [],
+            //         after: [],
+            //         action: async move || {
+            //             println("starting second")
+            //         }
+            //     })
+            // ]
         }
     }),
-    // (Node {
-    //     name: "bar",
-    //     before: [],
-    //     after: ["bar"],
-    //     action: async move || {
-    //         println("starting bar");
-    //         let a = time::sleep(time::Duration::from_secs(1));
-    //         a.await;
-    //         println("done bar")
-    //     }
-    // }),
+    (Node {
+        name: "second",
+        // before: [],
+        after: ["first"],
+        action: async move || {
+            println("starting second");
+            let a = time::sleep(time::Duration::from_secs(1));
+            a.await;
+            println("finish second");
+        }
+    }),
 ]}

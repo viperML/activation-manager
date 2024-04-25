@@ -10,7 +10,8 @@ pub struct Node {
     #[rune(get, set)]
     pub name: String,
     // before: Vec<String>,
-    // after: Vec<String>,
+    #[rune(get, set)]
+    pub after: Vec<String>,
     #[rune(get, set)]
     pub action: Value,
 }

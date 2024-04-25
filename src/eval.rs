@@ -1,4 +1,5 @@
 use core::fmt::{Debug, Formatter};
+use petgraph::{dot::{Config, Dot}, graph::DiGraph, visit::IntoNodeReferences};
 use rune::{
     alloc::clone::TryClone,
     runtime::{Function, Shared, Struct, SyncFunction, VmError, VmResult},
@@ -8,6 +9,7 @@ use rune::{
 use std::{
     any::type_name,
     borrow::{Borrow, BorrowMut},
+    collections::HashMap,
     path::Path,
     sync::Arc,
     time::Duration,
@@ -17,7 +19,7 @@ use tracing::debug;
 
 use crate::{api, Result};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OwnedNode
 // manually mark them for me to remember
 where
@@ -25,7 +27,7 @@ where
 {
     name: String,
     // before: Vec<String>,
-    // after: Vec<String>,
+    after: Vec<String>,
     action: Hash,
 }
 
@@ -36,6 +38,7 @@ impl FromValue for OwnedNode {
 
         VmResult::Ok(OwnedNode {
             name: node.name,
+            after: node.after,
             action: action.type_hash(),
         })
     }
@@ -58,6 +61,45 @@ where
 }
 
 pub async fn eval<P: AsRef<Path>>(manifest: P) -> Result<()> {
+    let vm = init(manifest)?;
+
+    let res = vm
+        .try_clone()?
+        .send_execute(["mk_nodes"], ())?
+        .async_complete()
+        .await
+        .unwrap();
+
+    let nodes: Vec<OwnedNode> = rune::from_value(res)?;
+    debug!(?nodes);
+
+    let mut graph = DiGraph::new();
+
+    // all_nodes.add_node(weight)
+    for n in nodes {
+        let idx = graph.add_node(n);
+    }
+
+    let mut new_graph = graph.clone();
+    for (idx, node) in graph.node_references() {
+        for after in &node.after {
+            for (jdx, node2) in graph.node_references() {
+                if node2.name == *after {
+                    new_graph.add_edge(jdx, idx, ());
+                }
+            }
+        }
+    }
+
+    debug!(?new_graph);
+
+    println!("{:?}", Dot::with_config(&new_graph, &[Config::EdgeNoLabel]));
+
+    Ok(())
+}
+
+/// Basic Rune initialisation
+fn init<P: AsRef<Path>>(manifest: P) -> eyre::Result<Vm> {
     let mut context = rune_modules::default_context()?;
     context.install(api::module()?)?;
 
@@ -81,45 +123,5 @@ pub async fn eval<P: AsRef<Path>>(manifest: P) -> Result<()> {
     let unit = result?;
 
     let vm = Vm::new(runtime, Arc::new(unit));
-
-    let res = vm
-        .try_clone()?
-        .send_execute(["mk_nodes"], ())?
-        .async_complete()
-        .await
-        .unwrap();
-
-    let nodes: Vec<OwnedNode> = rune::from_value(res)?;
-    debug!(?nodes);
-
-    for node in nodes {
-        debug!(?node);
-
-        let exec = vm.try_clone()?.send_execute(node.action, ())?;
-        let res = exec.async_complete().await.unwrap();
-        let subnodes: Vec<OwnedNode> = rune::from_value(res)?;
-
-        for subnode in subnodes {
-            let exec = vm.try_clone()?.send_execute(subnode.action, ())?;
-            let res: Value = exec.async_complete().await.unwrap();
-        }
-
-        // let f = node.action.take()?.into_sync().unwrap();
-        // let exec = vm.try_clone()?.send_execute(f.type_hash(), ())?;
-        // let hash = tokio::spawn(async {
-        //     let res = exec.async_complete().await.unwrap();
-        //     let f = Function::from_value(res).unwrap();
-        //     let hash = f.type_hash();
-        //     hash
-        // })
-        // .await
-        // .unwrap();
-
-        // let exec2 = vm.try_clone()?.send_execute(hash, ())?;
-        // exec2.async_complete().await.unwrap();
-    }
-
-    // tokio::time::sleep(Duration::from_secs(3)).await;
-
-    Ok(())
+    Ok(vm)
 }
