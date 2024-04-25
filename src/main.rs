@@ -1,5 +1,6 @@
 // #![allow(dead_code, unused_imports)] // TODO remove
 mod eval;
+mod api;
 
 use eyre::Result;
 use std::path::PathBuf;

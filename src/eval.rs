@@ -3,16 +3,22 @@ use rune::{
     alloc::clone::TryClone,
     runtime::{Function, Shared, Struct, SyncFunction, VmError, VmResult},
     termcolor::{ColorChoice, StandardStream},
-    Any, Diagnostics, FromValue, Hash, Module, Source, Sources, Value, Vm,
+    vm_try, Any, Diagnostics, FromValue, Hash, Module, Source, Sources, Value, Vm,
 };
-use std::{any::type_name, borrow::Borrow, path::Path, sync::Arc, time::Duration};
+use std::{
+    any::type_name,
+    borrow::{Borrow, BorrowMut},
+    path::Path,
+    sync::Arc,
+    time::Duration,
+};
 use tokio::runtime::Runtime;
 use tracing::debug;
 
-use crate::Result;
+use crate::{api, Result};
 
 #[derive(Debug)]
-pub struct Node
+pub struct OwnedNode
 // manually mark them for me to remember
 where
     Self: Send + Sync,
@@ -23,26 +29,15 @@ where
     action: Hash,
 }
 
-impl FromValue for Node {
+impl FromValue for OwnedNode {
     fn from_value(value: Value) -> VmResult<Self> {
-        if let Value::Struct(s) = value {
-            let mut s = s.borrow_mut().unwrap();
+        let node: api::Node = rune::from_value(value).unwrap();
+        let action: SyncFunction = rune::from_value(node.action).unwrap();
 
-            let name: String = get_owned(&mut s, "name").unwrap();
-
-            let action: SyncFunction = rune::from_value(std::mem::take(
-                s.get_mut("action")
-                    .ok_or_else(|| VmError::panic("failed to get key"))
-                    .unwrap(),
-            ))
-            .unwrap();
-
-            let h = action.type_hash();
-
-            VmResult::Ok(Self { name, action: h })
-        } else {
-            todo!();
-        }
+        VmResult::Ok(OwnedNode {
+            name: node.name,
+            action: action.type_hash(),
+        })
     }
 }
 
@@ -64,10 +59,7 @@ where
 
 pub async fn eval<P: AsRef<Path>>(manifest: P) -> Result<()> {
     let mut context = rune_modules::default_context()?;
-
-    let mut module = Module::new();
-    // module.ty::<Node>()?;
-    context.install(module)?;
+    context.install(api::module()?)?;
 
     let runtime = Arc::new(context.runtime()?);
 
@@ -97,7 +89,7 @@ pub async fn eval<P: AsRef<Path>>(manifest: P) -> Result<()> {
         .await
         .unwrap();
 
-    let nodes: Vec<Node> = rune::from_value(res)?;
+    let nodes: Vec<OwnedNode> = rune::from_value(res)?;
     debug!(?nodes);
 
     for node in nodes {
@@ -105,11 +97,11 @@ pub async fn eval<P: AsRef<Path>>(manifest: P) -> Result<()> {
 
         let exec = vm.try_clone()?.send_execute(node.action, ())?;
         let res = exec.async_complete().await.unwrap();
-        let subnodes: Vec<Node> = rune::from_value(res)?;
+        let subnodes: Vec<OwnedNode> = rune::from_value(res)?;
 
         for subnode in subnodes {
             let exec = vm.try_clone()?.send_execute(subnode.action, ())?;
-            let res = exec.async_complete().await.unwrap();
+            let res: Value = exec.async_complete().await.unwrap();
         }
 
         // let f = node.action.take()?.into_sync().unwrap();
