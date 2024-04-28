@@ -1,8 +1,4 @@
-use rune::{
-    runtime::{Function, Shared, VmResult},
-    vm_try, Any, Module, Value,
-};
-
+use rune::Module;
 
 pub(crate) fn module() -> eyre::Result<Module> {
     let mut m = Module::new();

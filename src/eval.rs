@@ -1,30 +1,21 @@
-use core::fmt::{Debug, Formatter};
-use eyre::{bail, ensure, ContextCompat};
+use crate::{api, Result};
+use core::fmt::Debug;
+use eyre::{bail, ContextCompat};
 use petgraph::{
     dot::{Config, Dot},
     graph::DiGraph,
-    visit::{EdgeRef, IntoNodeIdentifiers, IntoNodeReferences, Visitable},
+    visit::{EdgeRef, IntoNodeIdentifiers},
     Directed, Direction, Graph,
 };
 use rune::{
     alloc::clone::TryClone,
-    runtime::{Function, Object, Shared, Struct, SyncFunction, VmError, VmResult},
+    runtime::{Object, SyncFunction, VmError, VmResult},
     termcolor::{ColorChoice, StandardStream},
-    vm_try, Any, Diagnostics, FromValue, Hash, Module, Source, Sources, Value, Vm,
+    vm_try, Any, Diagnostics, FromValue, Hash, Source, Sources, Value, Vm,
 };
-use std::{
-    any::type_name,
-    borrow::{Borrow, BorrowMut},
-    collections::HashMap,
-    convert::identity,
-    path::Path,
-    sync::Arc,
-    time::Duration,
-};
-use tokio::{runtime::Runtime, task::JoinSet};
+use std::{collections::HashMap, path::Path, sync::Arc};
+use tokio::task::JoinSet;
 use tracing::{debug, span, trace, warn, Level};
-
-use crate::{api, Result};
 
 #[derive(Debug, Clone)]
 pub struct Node
