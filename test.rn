@@ -1,0 +1,8 @@
+pub fn main() {
+    let x = #{
+        foo: "bar",
+        after: []
+    };
+
+    dbg(x);
+}

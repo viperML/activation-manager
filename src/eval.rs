@@ -1,4 +1,5 @@
 use core::fmt::{Debug, Formatter};
+use eyre::{bail, ensure, ContextCompat};
 use petgraph::{
     dot::{Config, Dot},
     graph::DiGraph,
@@ -32,7 +33,7 @@ where
     Self: Send + Sync,
 {
     name: String,
-    // before: Vec<String>,
+    before: Vec<String>,
     after: Vec<String>,
     action: Hash,
 }
@@ -45,9 +46,16 @@ impl FromValue for Node {
         VmResult::Ok(Node {
             name: node.name,
             after: node.after,
+            before: node.before,
             action: action.type_hash(),
         })
     }
+}
+
+#[derive(Debug)]
+enum Dependency {
+    Weak,
+    Strong,
 }
 
 /// Gets an element from an struct by replacing it with the empty tuple
@@ -80,27 +88,36 @@ pub async fn eval<P: AsRef<Path>>(manifest: P) -> Result<()> {
     debug!(?nodes);
 
     let mut graph = DiGraph::new();
+    let mut all_nodes = HashMap::new();
 
     // all_nodes.add_node(weight)
-    for n in nodes {
-        let idx = graph.add_node(n);
+    for n in nodes.iter() {
+        let idx = graph.add_node(n.clone());
+        all_nodes.insert(n.name.as_str(), idx);
     }
 
-    let mut new_graph = graph.clone();
-    for (idx, node) in graph.node_references() {
-        for after in &node.after {
-            for (jdx, node2) in graph.node_references() {
-                if node2.name == *after {
-                    new_graph.add_edge(jdx, idx, ());
-                }
-            }
+    for n in nodes.iter() {
+        for after in &n.after {
+            let idx = all_nodes[n.name.as_str()];
+            let jxd = all_nodes.get(after.as_str());
+            let jdx = jxd.wrap_err(format!("{} is after {}, but it doesn't exist", n.name, after))?;
+            graph.add_edge(*jdx, idx, Dependency::Strong);
+        }
+
+        for before in &n.before {
+            let idx = all_nodes[n.name.as_str()];
+            let jxd = all_nodes.get(before.as_str());
+            let jdx = jxd.wrap_err(format!("{} is before {}, but it doesn't exist", n.name, before))?;
+            graph.add_edge(idx, *jdx, Dependency::Strong);
         }
     }
 
-    debug!(?new_graph);
-    println!("{:?}", Dot::with_config(&new_graph, &[Config::EdgeNoLabel]));
+    drop(all_nodes);
 
-    run_graph(&mut new_graph, vm.try_clone()?).await?;
+    debug!(?graph);
+    println!("{:?}", Dot::with_config(&graph, &[Config::EdgeNoLabel]));
+
+    run_graph(&mut graph, vm.try_clone()?).await?;
 
     Ok(())
 }
@@ -155,29 +172,32 @@ async fn run_graph<E>(g: &mut Graph<Node, E, Directed>, vm: Vm) -> eyre::Result<
             let span = span!(Level::DEBUG, "node", ?idx);
             let _enter = span.enter();
 
-            let all_parents_finished =
-                g.edges_directed(idx, Direction::Incoming)
-                    .fold(true, |acc, edge| {
-                        let idx_src = edge.source();
-                        let parent_state = &states[&idx_src];
-                        if matches!(parent_state, State::Finished) {
-                            acc
-                        } else {
-                            false
-                        }
+            if matches!(states[&idx], State::Waiting) {
+                let all_parents_finished =
+                    g.edges_directed(idx, Direction::Incoming)
+                        .fold(true, |acc, edge| {
+                            let idx_src = edge.source();
+                            let parent_state = &states[&idx_src];
+                            if matches!(parent_state, State::Finished) {
+                                acc
+                            } else {
+                                false
+                            }
+                        });
+
+                if all_parents_finished {
+                    let hash = g[idx].action;
+                    let execution = vm.try_clone()?.send_execute(hash, ())?;
+                    *states.get_mut(&idx).unwrap() = State::Running;
+
+                    let name = g[idx].name.clone();
+                    joinset.spawn(async move {
+                        let span = span!(Level::DEBUG, "task", ?name);
+                        let _enter = span.enter();
+                        execution.async_complete().await.unwrap();
+                        idx
                     });
-
-            debug!(?all_parents_finished);
-
-            if all_parents_finished && matches!(states[&idx], State::Waiting) {
-                *states.get_mut(&idx).unwrap() = State::Running;
-                let hash = g[idx].action;
-                let execution = vm.try_clone()?.send_execute(hash, ())?;
-
-                joinset.spawn(async move {
-                    execution.async_complete().await.unwrap();
-                    idx
-                });
+                }
             }
         }
 
@@ -190,6 +210,10 @@ async fn run_graph<E>(g: &mut Graph<Node, E, Directed>, vm: Vm) -> eyre::Result<
         let all_finished = states.iter().all(|(_, s)| matches!(s, State::Finished));
         if all_finished {
             debug!("all tasks finished");
+            if joinset.len() != 0 {
+                joinset.shutdown().await;
+                bail!("joinset still contained tasks");
+            }
             return Ok(());
         }
     }

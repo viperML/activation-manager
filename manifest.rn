@@ -4,7 +4,7 @@ pub fn mk_nodes() {[
         // before: [],
         after: [],
         action: async move || {
-            println("starting first");
+            debug("starting first");
             let a = time::sleep(time::Duration::from_secs(3));
             a.await;
             println("finish first");
