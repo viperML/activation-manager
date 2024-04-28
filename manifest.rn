@@ -1,46 +1,27 @@
-pub fn mk_nodes() {[
-    (Node {
+pub fn mk_nodes() {
+    let act = |name| async || {
+        debug(`starting ${name}`);
+        time::sleep(time::Duration::from_secs(3)).await;
+        debug(`ending ${name}`);
+    };
+    [
+    #{
         name: "first",
-        // before: [],
-        after: [],
-        action: async move || {
-            debug("starting first");
-            let a = time::sleep(time::Duration::from_secs(3));
-            a.await;
-            println("finish first");
-        }
-    }),
-    (Node {
-        name: "second",
-        // before: [],
-        after: ["first"],
-        action: async move || {
-            println("starting second");
-            let a = time::sleep(time::Duration::from_secs(3));
-            a.await;
-            println("finish second");
-        }
-    }),
-    (Node {
-        name: "third",
-        // before: [],
-        after: ["first"],
-        action: async move || {
-            println("starting third");
-            let a = time::sleep(time::Duration::from_secs(3));
-            a.await;
-            println("finish third");
-        }
-    }),
-    (Node {
-        name: "fourth",
-        // before: [],
-        after: ["second", "third"],
-        action: async move || {
-            println("starting fourth");
-            let a = time::sleep(time::Duration::from_secs(3));
-            a.await;
-            println("finish fourth");
-        }
-    }),
+        action: act("first"),
+    },
+    // #{
+    //     name: "second",
+    //     after: ["first"],
+    //     action: act("second"),
+    // },
+    // #{
+    //     name: "third",
+    //     after: ["first"],
+    //     action: act("third"),
+    // },
+    // #{
+    //     name: "fourth",
+    //     after: ["second", "third"],
+    //     action: act("fourth"),
+    // }
 ]}

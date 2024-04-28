@@ -8,7 +8,7 @@ use petgraph::{
 };
 use rune::{
     alloc::clone::TryClone,
-    runtime::{Function, Shared, Struct, SyncFunction, VmError, VmResult},
+    runtime::{Function, Object, Shared, Struct, SyncFunction, VmError, VmResult},
     termcolor::{ColorChoice, StandardStream},
     vm_try, Any, Diagnostics, FromValue, Hash, Module, Source, Sources, Value, Vm,
 };
@@ -40,14 +40,16 @@ where
 
 impl FromValue for Node {
     fn from_value(value: Value) -> VmResult<Self> {
-        let node: api::Node = rune::from_value(value).unwrap();
-        let action: SyncFunction = rune::from_value(node.action).unwrap();
+        let mut raw: Object = vm_try!(rune::from_value(value));
 
         VmResult::Ok(Node {
-            name: node.name,
-            after: node.after,
-            before: node.before,
-            action: action.type_hash(),
+            name: vm_try!(remove(&mut raw, "name")),
+            after: vm_try!(remove_or_default(&mut raw, "after")),
+            before: vm_try!(remove_or_default(&mut raw, "before")),
+            action: {
+                let f: SyncFunction = vm_try!(remove(&mut raw, "action"));
+                f.type_hash()
+            },
         })
     }
 }
@@ -58,20 +60,30 @@ enum Dependency {
     Strong,
 }
 
-/// Gets an element from an struct by replacing it with the empty tuple
-fn get_owned<T, S>(r#struct: &mut Struct, name: S) -> Result<T, VmError>
+/// Both removes and coerces from an object
+fn remove<T, S>(object: &mut Object, name: S) -> Result<T, VmError>
 where
     T: rune::FromValue,
     S: AsRef<str>,
 {
     let name = name.as_ref();
+    let v = object.remove(name);
+    let v = v.ok_or_else(|| VmError::panic(format!("Object doesn't contain key {}", name)))?;
+    rune::from_value(v)
+}
 
-    let refmut = r#struct
-        .get_mut(name)
-        .ok_or_else(|| VmError::panic("failed to get key"))?;
-    let value = std::mem::take(refmut);
-
-    rune::from_value(value)
+/// Both removes and coerces from an object
+fn remove_or_default<T, S>(object: &mut Object, name: S) -> Result<T, VmError>
+where
+    T: rune::FromValue + std::default::Default,
+    S: AsRef<str>,
+{
+    let name = name.as_ref();
+    let v = object.remove(name);
+    match v {
+        Some(v) => rune::from_value(v),
+        None => Ok(Default::default()),
+    }
 }
 
 pub async fn eval<P: AsRef<Path>>(manifest: P) -> Result<()> {
@@ -100,14 +112,20 @@ pub async fn eval<P: AsRef<Path>>(manifest: P) -> Result<()> {
         for after in &n.after {
             let idx = all_nodes[n.name.as_str()];
             let jxd = all_nodes.get(after.as_str());
-            let jdx = jxd.wrap_err(format!("{} is after {}, but it doesn't exist", n.name, after))?;
+            let jdx = jxd.wrap_err(format!(
+                "{} is after {}, but it doesn't exist",
+                n.name, after
+            ))?;
             graph.add_edge(*jdx, idx, Dependency::Strong);
         }
 
         for before in &n.before {
             let idx = all_nodes[n.name.as_str()];
             let jxd = all_nodes.get(before.as_str());
-            let jdx = jxd.wrap_err(format!("{} is before {}, but it doesn't exist", n.name, before))?;
+            let jdx = jxd.wrap_err(format!(
+                "{} is before {}, but it doesn't exist",
+                n.name, before
+            ))?;
             graph.add_edge(idx, *jdx, Dependency::Strong);
         }
     }
@@ -194,8 +212,12 @@ async fn run_graph<E>(g: &mut Graph<Node, E, Directed>, vm: Vm) -> eyre::Result<
                     joinset.spawn(async move {
                         let span = span!(Level::DEBUG, "task", ?name);
                         let _enter = span.enter();
-                        execution.async_complete().await.unwrap();
-                        idx
+                        let res = execution.async_complete().await;
+                        // values are not thread safe, return something else
+                        match res {
+                            VmResult::Ok(_) => (idx, Ok(())),
+                            VmResult::Err(err) => (idx, Err(err)),
+                        }
                     });
                 }
             }
@@ -203,7 +225,10 @@ async fn run_graph<E>(g: &mut Graph<Node, E, Directed>, vm: Vm) -> eyre::Result<
 
         while let Some(next) = joinset.join_next().await {
             debug!(?next, "task finished");
-            let idx = next?;
+            let (idx, vmresult) = next?;
+            if let Err(err) = vmresult {
+                bail!(err);
+            }
             *states.get_mut(&idx).unwrap() = State::Finished;
         }
 

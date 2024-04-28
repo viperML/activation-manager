@@ -1,8 +1,18 @@
-pub fn main() {
-    let x = #{
-        foo: "bar",
-        after: []
-    };
+fn act(name) {
+    async || {
+        println(`starting ${name}`);
+        time::sleep(time::Duration::from_secs(3)).await;
+        println(`ending ${name}`);
+    }
+}
 
+pub async fn main() {
+    let x = [
+        #{
+            name: "first",
+            action: act("first"),
+        },
+    ];
     dbg(x);
+    x[0]["action"]().await;
 }
