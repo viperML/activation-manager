@@ -9,7 +9,7 @@ use petgraph::{
 };
 use rune::{
     alloc::clone::TryClone,
-    runtime::{Object, SyncFunction, VmError, VmResult},
+    runtime::{Function, Object, Shared, SyncFunction, VmError, VmResult},
     termcolor::{ColorChoice, StandardStream},
     vm_try, Any, Diagnostics, FromValue, Hash, Source, Sources, Value, Vm,
 };
@@ -18,15 +18,11 @@ use tokio::task::JoinSet;
 use tracing::{debug, span, trace, warn, Level};
 
 #[derive(Debug, Clone)]
-pub struct Node
-// manually mark them for me to remember
-where
-    Self: Send + Sync,
-{
+pub struct Node {
     name: String,
     before: Vec<String>,
     after: Vec<String>,
-    action: Hash,
+    action: Shared<Function>,
 }
 
 impl FromValue for Node {
@@ -37,10 +33,7 @@ impl FromValue for Node {
             name: vm_try!(remove(&mut raw, "name")),
             after: vm_try!(remove_or_default(&mut raw, "after")),
             before: vm_try!(remove_or_default(&mut raw, "before")),
-            action: {
-                let f: SyncFunction = vm_try!(remove(&mut raw, "action"));
-                f.type_hash()
-            },
+            action: vm_try!(remove(&mut raw, "action")),
         })
     }
 }
@@ -195,14 +188,14 @@ async fn run_graph<E>(g: &mut Graph<Node, E, Directed>, vm: Vm) -> eyre::Result<
                         });
 
                 if all_parents_finished {
-                    let hash = g[idx].action;
-                    let execution = vm.try_clone()?.send_execute(hash, ())?;
-                    *states.get_mut(&idx).unwrap() = State::Running;
+                    let f = g[idx].action.borrow_ref()?;
+                    let execution = vm.try_clone()?.send_execute(f.type_hash(), ())?;
 
                     let name = g[idx].name.clone();
                     joinset.spawn(async move {
                         let span = span!(Level::DEBUG, "task", ?name);
                         let _enter = span.enter();
+
                         let res = execution.async_complete().await;
                         // values are not thread safe, return something else
                         match res {
