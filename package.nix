@@ -16,15 +16,6 @@ rustPlatform.buildRustPackage {
       ]
     );
   };
-  nativeBuildInputs = [
-    pkg-config
-  ];
-  buildInputs = [
-    lua5_4
-  ];
-  env = {
-    LUA_LINK = "dylib";
-  };
   strictDeps = true;
   meta.mainProgram = "activation-manager";
 }

@@ -13,9 +13,10 @@ use rune::{
     termcolor::{ColorChoice, StandardStream},
     vm_try, Any, Diagnostics, FromValue, Hash, Source, Sources, Value, Vm,
 };
-use std::{collections::HashMap, path::Path, sync::Arc};
+use std::{borrow::BorrowMut, collections::HashMap, future::Future, ops::DerefMut, path::Path, sync::Arc};
 use tokio::task::JoinSet;
 use tracing::{debug, span, trace, warn, Level};
+use std::cell::OnceCell;
 
 #[derive(Debug, Clone)]
 pub struct Node {
@@ -83,7 +84,7 @@ pub async fn eval<P: AsRef<Path>>(manifest: P) -> Result<()> {
     let nodes: Vec<Node> = rune::from_value(res)?;
     debug!(?nodes);
 
-    let mut graph = DiGraph::new();
+    let mut graph: Graph<Node, _> = DiGraph::new();
     let mut all_nodes = HashMap::new();
 
     // all_nodes.add_node(weight)
@@ -91,6 +92,8 @@ pub async fn eval<P: AsRef<Path>>(manifest: P) -> Result<()> {
         let idx = graph.add_node(n.clone());
         all_nodes.insert(n.name.as_str(), idx);
     }
+
+    // let idxs: Vec<_> = graph.node_indices().collect();
 
     for n in nodes.iter() {
         for after in &n.after {
@@ -188,18 +191,19 @@ async fn run_graph<E>(g: &mut Graph<Node, E, Directed>, vm: Vm) -> eyre::Result<
                         });
 
                 if all_parents_finished {
-                    let f = g[idx].action.borrow_ref()?;
-                    let execution = vm.try_clone()?.send_execute(f.type_hash(), ())?;
+                    let mut f = g[idx].action.borrow_mut()?;
+                    // Man-made horrors
+                    let f = std::mem::replace(f.deref_mut(), Function::new(|| {}));
+                    let f = f.into_sync().into_result()?;
 
                     let name = g[idx].name.clone();
                     joinset.spawn(async move {
                         let span = span!(Level::DEBUG, "task", ?name);
                         let _enter = span.enter();
 
-                        let res = execution.async_complete().await;
-                        // values are not thread safe, return something else
+                        let res: VmResult<()> = f.async_send_call(()).await;
                         match res {
-                            VmResult::Ok(_) => (idx, Ok(())),
+                            VmResult::Ok(res) => (idx, Ok(res)),
                             VmResult::Err(err) => (idx, Err(err)),
                         }
                     });

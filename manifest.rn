@@ -1,10 +1,12 @@
-pub fn mk_nodes() {
-    let act = |name| async || {
+fn act(name) {
+    async || {
         debug(`starting ${name}`);
         time::sleep(time::Duration::from_secs(3)).await;
         debug(`ending ${name}`);
-    };
-    [
+    }
+}
+
+pub fn mk_nodes() {[
     #{
         name: "first",
         action: act("first"),
