@@ -9,32 +9,43 @@ use petgraph::{
 };
 use rune::{
     alloc::clone::TryClone,
-    runtime::{Function, Object, Shared, SyncFunction, VmError, VmResult},
+    runtime::{Function, Object, SyncFunction, VmError, VmResult},
     termcolor::{ColorChoice, StandardStream},
-    vm_try, Any, Diagnostics, FromValue, Hash, Source, Sources, Value, Vm,
+    vm_try, Diagnostics, FromValue, Source, Sources, Value, Vm,
 };
-use std::{borrow::BorrowMut, collections::HashMap, future::Future, ops::DerefMut, path::Path, sync::Arc};
+use std::{cell::RefCell, collections::HashMap, path::Path, sync::Arc};
 use tokio::task::JoinSet;
 use tracing::{debug, span, trace, warn, Level};
-use std::cell::OnceCell;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Node {
     name: String,
     before: Vec<String>,
     after: Vec<String>,
-    action: Shared<Function>,
+    action: Arc<RefCell<Option<SyncFunction>>>,
+}
+
+impl Debug for Node {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Node")
+            .field("name", &self.name)
+            .field("before", &self.before)
+            .field("after", &self.after)
+            .finish()
+    }
 }
 
 impl FromValue for Node {
     fn from_value(value: Value) -> VmResult<Self> {
         let mut raw: Object = vm_try!(rune::from_value(value));
+        let f: Function = vm_try!(remove(&mut raw, "action"));
+        let fsync = vm_try!(f.into_sync());
 
         VmResult::Ok(Node {
             name: vm_try!(remove(&mut raw, "name")),
             after: vm_try!(remove_or_default(&mut raw, "after")),
             before: vm_try!(remove_or_default(&mut raw, "before")),
-            action: vm_try!(remove(&mut raw, "action")),
+            action: Arc::new(RefCell::new(Option::Some(fsync))),
         })
     }
 }
@@ -163,7 +174,7 @@ enum State {
     Waiting,
 }
 
-async fn run_graph<E>(g: &mut Graph<Node, E, Directed>, vm: Vm) -> eyre::Result<()> {
+async fn run_graph<E>(g: &mut Graph<Node, E, Directed>, _vm: Vm) -> eyre::Result<()> {
     let mut states = HashMap::new();
     for x in g.node_identifiers() {
         states.insert(x, State::Waiting);
@@ -191,10 +202,7 @@ async fn run_graph<E>(g: &mut Graph<Node, E, Directed>, vm: Vm) -> eyre::Result<
                         });
 
                 if all_parents_finished {
-                    let mut f = g[idx].action.borrow_mut()?;
-                    // Man-made horrors
-                    let f = std::mem::replace(f.deref_mut(), Function::new(|| {}));
-                    let f = f.into_sync().into_result()?;
+                    let f = g[idx].action.take().unwrap();
 
                     let name = g[idx].name.clone();
                     joinset.spawn(async move {
