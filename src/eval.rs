@@ -9,20 +9,24 @@ use petgraph::{
 };
 use rune::{
     alloc::clone::TryClone,
-    runtime::{Function, Object, SyncFunction, VmError, VmResult},
+    runtime::{Function, Object, Shared, SyncFunction, VmError, VmResult},
     termcolor::{ColorChoice, StandardStream},
-    vm_try, Diagnostics, FromValue, Source, Sources, Value, Vm,
+    vm_try, Diagnostics, FromValue, Source, Sources, ToValue, Value, Vm,
 };
-use std::{cell::RefCell, collections::HashMap, path::Path, sync::Arc};
+use std::{borrow::Borrow, cell::RefCell, collections::HashMap, path::Path, sync::Arc};
 use tokio::task::JoinSet;
-use tracing::{debug, span, trace, warn, Level};
+use tracing::{debug, instrument, span, trace, warn, Level};
+
+use rune::alloc::Vec as RVec;
+
+type Action = Option<Arc<SyncFunction>>;
 
 #[derive(Clone)]
 pub struct Node {
     name: String,
     before: Vec<String>,
     after: Vec<String>,
-    action: Arc<RefCell<Option<SyncFunction>>>,
+    action: Action,
 }
 
 impl Debug for Node {
@@ -31,6 +35,7 @@ impl Debug for Node {
             .field("name", &self.name)
             .field("before", &self.before)
             .field("after", &self.after)
+            .field("action", &"<hidden>")
             .finish()
     }
 }
@@ -38,14 +43,15 @@ impl Debug for Node {
 impl FromValue for Node {
     fn from_value(value: Value) -> VmResult<Self> {
         let mut raw: Object = vm_try!(rune::from_value(value));
-        let f: Function = vm_try!(remove(&mut raw, "action"));
-        let fsync = vm_try!(f.into_sync());
 
         VmResult::Ok(Node {
             name: vm_try!(remove(&mut raw, "name")),
             after: vm_try!(remove_or_default(&mut raw, "after")),
             before: vm_try!(remove_or_default(&mut raw, "before")),
-            action: Arc::new(RefCell::new(Option::Some(fsync))),
+            action: match remove::<Function, _>(&mut raw, "action") {
+                Ok(f) => Some(Arc::new(vm_try!(f.into_sync()))),
+                Err(_) => None,
+            },
         })
     }
 }
@@ -54,6 +60,48 @@ impl FromValue for Node {
 enum Dependency {
     Weak,
     Strong,
+}
+
+#[derive(Debug, Default)]
+struct NodeList {
+    inner: Vec<Node>,
+}
+
+impl Borrow<Vec<Node>> for NodeList {
+    fn borrow(&self) -> &Vec<Node> {
+        &self.inner
+    }
+}
+
+impl FromValue for NodeList {
+    fn from_value(value: Value) -> VmResult<Self> {
+        match value {
+            Value::Vec(v) => {
+                let v = vm_try!(v.take()).into_inner();
+                let mut vfinal = Vec::new();
+                for elem in v {
+                    let res = vm_try!(Node::from_value(elem));
+                    vfinal.push(res);
+                }
+                VmResult::Ok(Self { inner: vfinal })
+            }
+            Value::EmptyTuple => VmResult::Ok(Default::default()),
+            Value::Tuple(t) => {
+                let t = vm_try!(t.take()).to_vec();
+                let mut vfinal = Vec::new();
+                for elem in t.into_iter() {
+                    let res = vm_try!(Node::from_value(elem));
+                    vfinal.push(res);
+                }
+                VmResult::Ok(Self { inner: vfinal })
+            }
+            v @ Value::Object(_) => {
+                let res = vm_try!(Node::from_value(v));
+                VmResult::Ok(Self { inner: vec![res] })
+            }
+            _ => VmResult::panic("failed to parse result as a NodeList"),
+        }
+    }
 }
 
 /// Both removes and coerces from an object
@@ -202,27 +250,31 @@ async fn run_graph<E>(g: &mut Graph<Node, E, Directed>, _vm: Vm) -> eyre::Result
                         });
 
                 if all_parents_finished {
-                    let f = g[idx].action.take().unwrap();
+                    let f = g[idx].action.take();
 
                     let name = g[idx].name.clone();
                     joinset.spawn(async move {
                         let span = span!(Level::DEBUG, "task", ?name);
                         let _enter = span.enter();
 
-                        let res: VmResult<()> = f.async_send_call(()).await;
-                        match res {
-                            VmResult::Ok(res) => (idx, Ok(res)),
-                            VmResult::Err(err) => (idx, Err(err)),
-                        }
+                        let result = match f {
+                            Some(f) => {
+                                let res: VmResult<NodeList> = f.async_send_call(()).await;
+                                res
+                                // VmResult::Ok(res)
+                            }
+                            None => VmResult::Ok(Default::default()),
+                        };
+
+                        (idx, result)
                     });
                 }
             }
         }
 
         while let Some(next) = joinset.join_next().await {
-            debug!(?next, "task finished");
             let (idx, vmresult) = next?;
-            if let Err(err) = vmresult {
+            if let VmResult::Err(err) = vmresult {
                 bail!(err);
             }
             *states.get_mut(&idx).unwrap() = State::Finished;
