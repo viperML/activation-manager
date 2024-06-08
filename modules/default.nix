@@ -14,6 +14,6 @@
     ./core
 
     # home specific functionality
-    ./home
+    # ./home
   ];
 }

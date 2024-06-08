@@ -3,28 +3,42 @@
   pkgs,
   config,
   ...
-}:
-let
+}: let
   inherit (lib) mkOption types;
-in
-{
+in {
   options = {
     manifest = mkOption {
       type = types.package;
-      description = "Resulting manifest of all entries.";
+      description = "Activation-manager manifest.";
       readOnly = true;
     };
-
-    # flavor = mkOption {
-    #   type = types.enum [ "home" ];
-    #   description = "Specific configuration for the task.";
-    # };
   };
 
   config = {
-    manifest = pkgs.writers.writeJSON "activation-manager-manifest.json" {
-      version = "0";
-      inherit (config) nodes static nodes2;
-    };
+    manifest = let
+      node2rune = {
+        name,
+        value,
+      }: ''
+        #{
+          name: "${name}",
+          after: ${builtins.toJSON value.after},
+          before: ${builtins.toJSON value.before},
+          ${lib.optionalString (value.action != null) ''
+          action: || {
+            ${value.action}
+          }''}
+        },
+      '';
+    in
+      pkgs.writeTextFile {
+        name = "activation-manager-manifest";
+        text = ''
+          pub fn mk_nodes() {[
+            ${lib.pipe config.nodes [lib.attrsToList (map node2rune) (lib.concatStringsSep "\n")]}
+          ]}
+        '';
+        destination = "/manifest.rn";
+      };
   };
 }

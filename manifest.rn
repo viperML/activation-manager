@@ -9,18 +9,20 @@ fn act(name) {
 pub fn mk_nodes() {[
     #{
         name: "first",
-        action: act("first"),
+        action: || {
+            
+        },
     },
-    // #{
-    //     name: "second",
-    //     after: ["first"],
-    //     action: act("second"),
-    // },
-    // #{
-    //     name: "third",
-    //     after: ["first"],
-    //     action: act("third"),
-    // },
+    #{
+        name: "second",
+        after: ["first"],
+        action: act("second"),
+    },
+    #{
+        name: "third",
+        after: ["first"],
+        action: act("third"),
+    },
     // #{
     //     name: "fourth",
     //     after: ["second", "third"],

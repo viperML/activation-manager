@@ -3,6 +3,6 @@
     ./bin.nix
     ./manifest.nix
     ./nodes.nix
-    ./static.nix
+    # ./static.nix
   ];
 }

@@ -224,13 +224,14 @@ enum State {
 
 async fn run_graph<E>(g: &mut Graph<Node, E, Directed>, _vm: Vm) -> eyre::Result<()> {
     let mut states = HashMap::new();
-    for x in g.node_identifiers() {
+    for x in g.node_indices() {
         states.insert(x, State::Waiting);
     }
 
     let mut joinset = JoinSet::new();
 
     for i in 1..100 {
+        // limit iterations
         trace!(?i);
         for idx in g.node_indices() {
             let span = span!(Level::DEBUG, "node", ?idx);
@@ -253,16 +254,13 @@ async fn run_graph<E>(g: &mut Graph<Node, E, Directed>, _vm: Vm) -> eyre::Result
                     let f = g[idx].action.take();
 
                     let name = g[idx].name.clone();
+                    *states.get_mut(&idx).unwrap() = State::Running;
                     joinset.spawn(async move {
                         let span = span!(Level::DEBUG, "task", ?name);
                         let _enter = span.enter();
 
-                        let result = match f {
-                            Some(f) => {
-                                let res: VmResult<NodeList> = f.async_send_call(()).await;
-                                res
-                                // VmResult::Ok(res)
-                            }
+                        let result: VmResult<NodeList> = match f {
+                            Some(f) => f.async_send_call(()).await,
                             None => VmResult::Ok(Default::default()),
                         };
 
@@ -291,6 +289,6 @@ async fn run_graph<E>(g: &mut Graph<Node, E, Directed>, _vm: Vm) -> eyre::Result
         }
     }
 
-    warn!("Iteration limit reached, exiting");
+    tracing::error!("Iteration limit reached, exiting");
     Ok(())
 }

@@ -21,9 +21,9 @@ in {
   };
 
   config.bin = {
-    activation-manager = pkgs.callPackage ../package.nix {};
+    activation-manager = pkgs.callPackage ../../package.nix {};
     activate = pkgs.writeShellScriptBin "activate" ''
-      ${lib.getExe config.bin.activation-manager} "$@" activate --manifest ${config.manifest}
+      exec ${lib.getExe config.bin.activation-manager} activate "$@" ${config.manifest}/manifest.rn
     '';
     bundle = pkgs.symlinkJoin {
       name = "activation-manager-bundle";
@@ -31,8 +31,8 @@ in {
         config.bin.activation-manager
         config.bin.activate
         (pkgs.runCommandLocal "activation-manager-manifest" {} ''
-          mkdir -p $out/etc
-          ln -vsfT ${config.manifest} $out/etc/activation-manager-manifest.json
+          mkdir -p $out
+          ln -vsfT ${config.manifest} $out/activation-manager-manifest.rn
         '')
       ];
     };
