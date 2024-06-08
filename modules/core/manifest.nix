@@ -25,9 +25,10 @@ in {
           after: ${builtins.toJSON value.after},
           before: ${builtins.toJSON value.before},
           ${lib.optionalString (value.action != null) ''
-          action: || {
+          action: async || {
             ${value.action}
-          }''}
+          }
+          ''}
         },
       '';
     in

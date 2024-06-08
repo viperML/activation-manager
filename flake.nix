@@ -39,6 +39,9 @@
                 eval.config.bin.bundle
               ];
               # inherit eval;
+              passthru = {
+                inherit eval;
+              };
             };
         }
       );
