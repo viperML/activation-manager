@@ -1,0 +1,6 @@
+pub async fn main() {
+    let cmd = process::Command::new("sleep");
+    cmd.arg("10");
+    // let x = cmd.spawn();
+    dbg(cmd);
+}

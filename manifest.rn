@@ -1,15 +1,18 @@
-fn act(name) {
-    async || {
-        debug(`starting ${name}`);
-        time::sleep(time::Duration::from_secs(3)).await;
-        debug(`ending ${name}`);
-    }
-}
-
 pub fn mk_nodes() {[
     #{
-        name: "first",
-        action: || {
+        name: "sleep",
+        action: async || {
+            debug("starting sleep");
+            run("sleep 10").await;
+            debug("done sleep");
         }
     },
+    #{
+        name: "foo",
+        action: async || {
+            debug("1");
+            time::sleep(time::Duration::from_secs(1)).await;
+            debug("2");
+        },
+    }
 ]}
