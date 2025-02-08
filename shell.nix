@@ -1,4 +1,4 @@
-with import <nixpkgs> {};
+with import <nixpkgs> { };
 pkgs.mkShell {
   packages = [
     pkgs.cargo
@@ -15,6 +15,6 @@ pkgs.mkShell {
 
   env = {
     RUST_BACKTRACE = "full";
+    RUST_SRC_PATH = "${rustPlatform.rustLibSrc}";
   };
 }
-

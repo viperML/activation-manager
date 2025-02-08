@@ -10,6 +10,10 @@ pub struct Node {
     kind: Box<dyn NodeExec>,
 }
 
+pub trait NodeExec: fmt::Debug {
+    fn exec(&self);
+}
+
 impl Default for Node {
     fn default() -> Self {
         Self {
@@ -18,10 +22,6 @@ impl Default for Node {
             after: Default::default(),
         }
     }
-}
-
-pub trait NodeExec: fmt::Debug {
-    fn exec(&self);
 }
 
 #[derive(Debug)]
@@ -42,7 +42,7 @@ impl NodeExec for File {
     }
 }
 
-pub fn file_from_lua(lua: &Lua, table: Table) -> eyre::Result<Node> {
+pub fn file_from_lua(table: Table) -> eyre::Result<Node> {
     let from: String = table.get("from")?;
     let to: String = table.get("to")?;
 

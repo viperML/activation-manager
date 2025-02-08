@@ -5,6 +5,12 @@ am.file {
   to = "/run/user/10000/foo",
 }
 
+
+am.file {
+  from = "/a",
+  to = "/b",
+}
+
 -- local fbar = am.file {
 --   from = "/nix/store/bar",
 --   to = ".config/bar",

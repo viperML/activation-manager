@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::mpsc;
 
 use mlua::prelude::*;
 use mlua::LuaSerdeExt;
@@ -20,7 +21,6 @@ fn load_module<S: AsRef<str>>(lua: &Lua, name: S, module: &Table) -> LuaResult<(
     Ok(())
 }
 
-
 pub fn main() -> eyre::Result<()> {
     let args = <Args as clap::Parser>::parse();
     println!("{args:?}");
@@ -29,21 +29,25 @@ pub fn main() -> eyre::Result<()> {
 
     let module = lua.create_table()?;
 
-    let f = lua.create_function(|lua, input: Table| {
-        let n = crate::node::file_from_lua(&lua, input);
-        println!("{n:?}");
-        Ok(())
-    })?;
+    let (tx, rx) = mpsc::channel();
 
     module.set(
         "file",
-        f
+        lua.create_function(move |lua, input: Table| {
+            let node = crate::node::file_from_lua(input).unwrap();
+            tx.send(node).unwrap();
+            Ok(())
+        })?,
     )?;
 
     load_module(&lua, "am", &module)?;
 
     let res: LuaValue = lua.load(args.file.as_path()).eval()?;
     println!("{res:?}");
+
+    while let Ok(next) = rx.try_recv() {
+        println!("{next:?}");
+    }
 
     Ok(())
 }
