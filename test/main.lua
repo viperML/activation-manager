@@ -1,10 +1,10 @@
 local am = require("am")
 
--- am.file {
---   from = "/nix/store/foo",
---   to = ".config/foo"
--- }
---
+am.file {
+  from = "/nix/store/foo",
+  to = "/run/user/10000/foo",
+}
+
 -- local fbar = am.file {
 --   from = "/nix/store/bar",
 --   to = ".config/bar",

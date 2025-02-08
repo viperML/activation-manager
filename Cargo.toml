@@ -7,4 +7,5 @@ edition = "2021"
 clap = { version = "4.5.28", features = ["derive"] }
 color-eyre = "0.6.3"
 eyre = "0.6.12"
-mlua = { version = "0.10.3", features = ["lua54"] }
+mlua = { version = "0.10.3", features = ["lua54", "error-send", "serialize"] }
+serde = { version = "1.0.217", features = ["derive"] }
