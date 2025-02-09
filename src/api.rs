@@ -6,6 +6,8 @@ use mlua::LuaSerdeExt;
 use mlua::Table;
 
 use serde::Deserialize;
+use tracing::debug;
+use tracing::trace;
 
 #[derive(Debug, clap::Parser)]
 struct Args {
@@ -23,7 +25,8 @@ fn load_module<S: AsRef<str>>(lua: &Lua, name: S, module: &Table) -> LuaResult<(
 
 pub fn main() -> eyre::Result<()> {
     let args = <Args as clap::Parser>::parse();
-    println!("{args:?}");
+    trace!(?args);
+
 
     let lua = Lua::new();
 
@@ -41,6 +44,14 @@ pub fn main() -> eyre::Result<()> {
         })?,
     )?;
 
+    module.set(
+        "debug",
+        lua.create_function(|lua, input: LuaValue| {
+            debug!("{input:?}");
+            Ok(())
+        })?
+    )?;
+
     load_module(&lua, "am", &module)?;
 
     lua.load(args.file.as_path()).exec()?;
@@ -49,7 +60,7 @@ pub fn main() -> eyre::Result<()> {
     while let Ok(next) = rx.try_recv() {
         nodes.push(next);
     }
-    println!("{nodes:#?}");
+    trace!("{nodes:#?}");
 
     crate::exec::run_graph(&nodes);
 

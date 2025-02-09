@@ -34,15 +34,23 @@ impl NodeExec for File {
 pub fn file_from_lua(table: Table) -> LuaResult<Node> {
     let from: String = table.get("from")?;
     let to: String = table.get("to")?;
+    let id: Option<String> = table.get("id").ok();
 
     let kind = File { from, to };
 
-    let mut hasher = Sha256::new();
-    hasher.update(&kind.from);
-    hasher.update(&kind.to);
+    let id = match id {
+        Some(x) => x,
+        None => {
+            let mut hasher = Sha256::new();
+            hasher.update(&kind.from);
+            hasher.update(&kind.to);
+            let hash = base16::encode_lower(&hasher.finalize());
+            format!("node-{hash}")
+        }
+    };
 
     let node = Node {
-        id: base16::encode_lower(&hasher.finalize()),
+        id,
         kind: Box::new(kind),
         after: vec![],
         before: vec![],
