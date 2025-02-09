@@ -1,9 +1,11 @@
 local am = require("am")
 
-am.file {
+local f1 = am.file {
   from = "/nix/store/foo",
   to = "/run/user/10000/foo",
 }
+
+print(f1)
 
 
 am.file {

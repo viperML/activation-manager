@@ -2,26 +2,18 @@ use std::fmt;
 
 use mlua::prelude::*;
 use mlua::Table;
+use sha2::{Digest, Sha256};
 
 #[derive(Debug)]
 pub struct Node {
-    before: Vec<String>,
-    after: Vec<String>,
-    kind: Box<dyn NodeExec>,
+    pub id: String,
+    pub before: Vec<String>,
+    pub after: Vec<String>,
+    pub kind: Box<dyn NodeExec>,
 }
 
 pub trait NodeExec: fmt::Debug {
     fn exec(&self);
-}
-
-impl Default for Node {
-    fn default() -> Self {
-        Self {
-            kind: Box::new(NilNode),
-            before: Default::default(),
-            after: Default::default(),
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -42,15 +34,21 @@ impl NodeExec for File {
     }
 }
 
-pub fn file_from_lua(table: Table) -> eyre::Result<Node> {
+pub fn file_from_lua(table: Table) -> LuaResult<Node> {
     let from: String = table.get("from")?;
     let to: String = table.get("to")?;
 
     let kind = File { from, to };
 
+    let mut hasher = Sha256::new();
+    hasher.update(&kind.from);
+    hasher.update(&kind.to);
+
     let node = Node {
+        id: base16::encode_lower(&hasher.finalize()),
         kind: Box::new(kind),
-        ..Default::default()
+        after: vec![],
+        before: vec![],
     };
 
     Ok(node)

@@ -33,10 +33,11 @@ pub fn main() -> eyre::Result<()> {
 
     module.set(
         "file",
-        lua.create_function(move |lua, input: Table| {
-            let node = crate::node::file_from_lua(input).unwrap();
+        lua.create_function(move |_, input: Table| {
+            let node = crate::node::file_from_lua(input)?;
+            let id = node.id.clone();
             tx.send(node).unwrap();
-            Ok(())
+            Ok(id)
         })?,
     )?;
 
