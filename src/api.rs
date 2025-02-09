@@ -46,9 +46,15 @@ pub fn main() -> eyre::Result<()> {
     let res: LuaValue = lua.load(args.file.as_path()).eval()?;
     println!("{res:?}");
 
+    let mut nodes = Vec::new();
+
     while let Ok(next) = rx.try_recv() {
-        println!("{next:?}");
+        nodes.push(next);
     }
+
+    println!("{nodes:#?}");
+
+    crate::exec::run_graph(&nodes);
 
     Ok(())
 }

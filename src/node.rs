@@ -1,4 +1,6 @@
 use std::fmt;
+use std::fs;
+use std::os::unix;
 
 use mlua::prelude::*;
 use mlua::Table;
@@ -13,13 +15,7 @@ pub struct Node {
 }
 
 pub trait NodeExec: fmt::Debug {
-    fn exec(&self);
-}
-
-#[derive(Debug)]
-pub struct NilNode;
-impl NodeExec for NilNode {
-    fn exec(&self) {}
+    fn exec(&self) -> eyre::Result<()>;
 }
 
 #[derive(Debug)]
@@ -29,8 +25,9 @@ pub struct File {
 }
 
 impl NodeExec for File {
-    fn exec(&self) {
-        println!("Executing file");
+    fn exec(&self) -> eyre::Result<()> {
+        unix::fs::symlink(&self.from, &self.to)?;
+        Ok(())
     }
 }
 
