@@ -1,11 +1,20 @@
+use color_eyre::owo_colors::OwoColorize;
 use tracing::trace;
 
 use crate::node::Node;
 
-pub fn run_graph(nodes: &Vec<Node>) -> eyre::Result<()> {
+pub fn run_graph(nodes: &Vec<Node>, dry: bool) -> eyre::Result<()> {
     for node in nodes {
-        trace!("Running node {}", node.id);
-        node.kind.exec()?;
+        print!("{} Activating: ", ">".green());
+        if let Some(desc) = &node.description {
+            println!("{}", desc.bright_black());
+        } else {
+            println!("{}", node.id.bright_black());
+        }
+
+        if !dry {
+            node.kind.exec()?;
+        }
     }
 
     Ok(())

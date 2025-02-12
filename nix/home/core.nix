@@ -11,10 +11,10 @@ let
     { name, ... }:
     {
       options = {
-        from = mkOption {
+        target = mkOption {
           type = types.str;
         };
-        to = mkOption {
+        link = mkOption {
           type = types.str;
           default = name;
         };
@@ -30,7 +30,7 @@ in
       };
 
       manifest = mkOption {
-        type = types.str;
+        type = types.package;
       };
 
       bundle = mkOption {
@@ -38,34 +38,45 @@ in
       };
     };
 
-    home.file = mkOption {
-      default = { };
-      type = types.attrsOf (types.submodule fileSubmodule);
+    home = {
+      file = mkOption {
+        default = { };
+        type = types.attrsOf (types.submodule fileSubmodule);
+      };
     };
 
   };
 
   config = {
-    build.manifest = # lua
-      ''
-        local am = require("am")
-        local os = require("os")
-        local home = os.getenv("HOME")
+    build.manifest =
+      pkgs.writeText "manifest.lua"
+        # lua
+        ''
+          local am = require("am")
+          local os = require("os")
+          local home = os.getenv("HOME")
 
-        ${
-          config.home.file
-          |> builtins.attrValues
-          |> (map (node:
-          # lua
-          ''
-            am.file {
-              from = home .. "/${node.from}",
-              to = home .. "/${node.to}",
-            }
-          ''))
-          |> builtins.concatStringsSep "\n"
-        }
-      '';
+          local static = home .. "/.local/state/activation-manager/static"
+
+          ${
+            config.home.file
+            |> builtins.attrValues
+            |> (map (node:
+            # lua
+            ''
+              am.file {
+                link = home .. "/${node.link}",
+                target = static .. "/${node.link}",
+              }
+
+              am.file {
+                link = static .. "/${node.link}",
+                target = home .. "/${node.target}",
+              }
+            ''))
+            |> builtins.concatStringsSep "\n"
+          }
+        '';
 
     build.bundle =
       pkgs.runCommandLocal "am-bundle"
@@ -75,9 +86,7 @@ in
         ''
           mkdir -p $out/bin
           makeWrapper ${lib.getExe config.build.package} $out/bin/activate \
-            --append-flags ${
-              pkgs.writeText "manifest.lua" config.build.manifest
-            }
+            --append-flags ${config.build.manifest}
         '';
   };
 

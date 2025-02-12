@@ -3,7 +3,7 @@ let
     { pkgs, config, ... }:
     {
       home.file."foo" = {
-        from = "bar";
+        target = "hello";
       };
     };
 in

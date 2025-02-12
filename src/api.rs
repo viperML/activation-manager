@@ -12,6 +12,9 @@ use tracing::trace;
 #[derive(Debug, clap::Parser)]
 struct Args {
     file: PathBuf,
+
+    #[arg(short = 'n', long)]
+    dry: bool
 }
 
 fn load_module<S: AsRef<str>>(lua: &Lua, name: S, module: &Table) -> LuaResult<()> {
@@ -62,7 +65,7 @@ pub fn main() -> eyre::Result<()> {
     }
     trace!("{nodes:#?}");
 
-    crate::exec::run_graph(&nodes);
+    crate::exec::run_graph(&nodes, args.dry)?;
 
     Ok(())
 }
