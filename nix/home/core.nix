@@ -57,6 +57,7 @@ in
           local home = os.getenv("HOME")
 
           local static = home .. "/.local/state/activation-manager/static"
+          local static_new = static .. "-" .. os.time()
 
           ${
             config.home.file
@@ -70,11 +71,16 @@ in
               }
 
               am.file {
-                link = static .. "/${node.link}",
+                link = static_new .. "/${node.link}",
                 target = home .. "/${node.target}",
               }
             ''))
             |> builtins.concatStringsSep "\n"
+          }
+
+          am.file {
+            link = static,
+            target = static_new,
           }
         '';
 
