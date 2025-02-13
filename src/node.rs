@@ -44,10 +44,18 @@ impl NodeExec for File {
     }
 }
 
+pub fn before_after(table: &Table) -> (Vec<String>, Vec<String>) {
+    let before: Vec<String> = table.get("before").unwrap_or_default();
+    let after: Vec<String> = table.get("after").unwrap_or_default();
+    (before, after)
+}
+
 pub fn file_from_lua(table: Table) -> LuaResult<Node> {
     let link: String = table.get("link")?;
     let target: String = table.get("target")?;
     let id: Option<String> = table.get("id").ok();
+    let (before, after) = before_after(&table);
+    let copy: bool = table.get("copy").ok().unwrap_or(false);
 
     let kind = File { link, target };
 
@@ -67,8 +75,8 @@ pub fn file_from_lua(table: Table) -> LuaResult<Node> {
     let node = Node {
         id,
         kind: Box::new(kind),
-        after: vec![],
-        before: vec![],
+        before,
+        after,
         description,
     };
 

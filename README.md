@@ -9,6 +9,8 @@ Features:
   - [ ] Exec node type
   - [ ] Systemd unit node type
   - [ ] API for dealing with Lua expressions vs strings
+  - [ ] Lua type hints
+  - [ ] Dconf node type
 
   - [x] Home-manager-like Nix library
     - [x] Use static directory

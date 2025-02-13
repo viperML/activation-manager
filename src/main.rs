@@ -3,6 +3,7 @@
 mod api;
 mod exec;
 mod node;
+mod dconf;
 
 fn main() -> eyre::Result<()> {
     use tracing_subscriber::{fmt, prelude::*, EnvFilter};

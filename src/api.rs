@@ -37,12 +37,13 @@ pub fn main() -> eyre::Result<()> {
 
     let (tx, rx) = mpsc::channel();
 
+    let txx = tx.clone();
     module.set(
         "file",
         lua.create_function(move |_, input: Table| {
             let node = crate::node::file_from_lua(input)?;
             let id = node.id.clone();
-            tx.send(node).unwrap();
+            txx.send(node).unwrap();
             Ok(id)
         })?,
     )?;
@@ -52,6 +53,18 @@ pub fn main() -> eyre::Result<()> {
         lua.create_function(|lua, input: LuaValue| {
             debug!("{input:?}");
             Ok(())
+        })?
+    )?;
+
+    let txx = tx.clone();
+    module.set(
+        "dconf",
+        lua.create_function(move |_, input: Table| {
+            // let node = crate::node::file_from_lua(input)?;
+            let node = crate::dconf::dconf_node(input)?;
+            let id = node.id.clone();
+            txx.send(node).unwrap();
+            Ok(id)
         })?
     )?;
 
