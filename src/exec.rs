@@ -8,9 +8,7 @@ pub fn run_graph(nodes: &Vec<Node>, dry: bool) -> eyre::Result<()> {
         print!("{} Activating: ", ">".green());
         if let Some(desc) = &node.description {
             println!("{}", desc.bright_black());
-        } else {
-            println!("{}", node.id.bright_black());
-        }
+        } 
 
         if !dry {
             node.kind.exec()?;

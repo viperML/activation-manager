@@ -45,6 +45,12 @@ in
       };
     };
 
+    dconf = {
+      settings = mkOption {
+        default = {};
+        type = types.attrsOf (types.anything);
+      };
+    };
   };
 
   config = {
@@ -81,6 +87,22 @@ in
           am.file {
             link = static,
             target = static_new,
+          }
+
+          ${
+            config.dconf.settings
+            |> lib.attrsToList
+            |> map (
+              { name, value }:
+              # lua
+              "am.dconf ${
+                lib.generators.toLua {} {
+                  inherit value;
+                  key = name;
+                }
+              }"
+            )
+            |> builtins.concatStringsSep "\n"
           }
         '';
 

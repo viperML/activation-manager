@@ -12,7 +12,7 @@ use tracing::trace;
 
 #[derive(Debug)]
 pub struct Node {
-    pub id: String,
+    // pub id: String,
     pub before: Vec<String>,
     pub after: Vec<String>,
     pub kind: Box<dyn NodeExec>,
@@ -73,7 +73,7 @@ pub fn file_from_lua(table: Table) -> LuaResult<Node> {
     let description = Some(format!("Symlink {} -> {}", kind.link, kind.target));
 
     let node = Node {
-        id,
+        // id,
         kind: Box::new(kind),
         before,
         after,

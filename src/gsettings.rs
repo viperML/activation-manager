@@ -5,29 +5,19 @@ use tracing::trace;
 use crate::node::{before_after, Node, NodeExec};
 
 #[derive(Debug)]
-pub struct DconfNode {
+pub struct GsettingsNode {
+    pub schema: Vec<String>,
     pub key: String,
     pub value: String,
 }
 
-impl NodeExec for DconfNode {
+impl NodeExec for GsettingsNode {
     #[tracing::instrument(level = "trace")]
     fn exec(&self) -> eyre::Result<()> {
-        let mut schema = self
-            .key
-            .strip_prefix("/")
-            .unwrap()
-            .split("/")
-            .collect::<Vec<_>>();
-
-        let key = schema.pop().unwrap();
-
-        trace!(?schema, ?key);
-
         let out = std::process::Command::new("gsettings")
             .arg("set")
-            .arg(schema.join("."))
-            .arg(key)
+            .arg(self.schema.join("."))
+            .arg(&self.key)
             .arg(&self.value)
             .output()?;
 
@@ -43,15 +33,21 @@ impl NodeExec for DconfNode {
 
 pub fn dconf_node(input: Table) -> mlua::Result<Node> {
     let (before, after) = before_after(&input);
-    let key: String = input.get("key")?;
+    let dconf_key: String = input.get("key")?;
     let value: String = input.get("value")?;
 
-    let kind = DconfNode { key, value };
+    let mut schema = vec![];
+    for elem in dconf_key.strip_prefix("/").unwrap().split("/") {
+        schema.push(elem.to_string());
+    }
+    let key = schema.pop().unwrap();
 
-    let description = Some(format!("{} ⇒  {}", kind.key, kind.value));
+    let kind = GsettingsNode { key, schema, value };
+
+    let description = Some(format!("{dconf_key} => {}", kind.value));
 
     Ok(Node {
-        id: format!("FIXME"),
+        // id: format!("FIXME"),
         before,
         after,
         kind: Box::new(kind),

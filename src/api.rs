@@ -42,9 +42,9 @@ pub fn main() -> eyre::Result<()> {
         "file",
         lua.create_function(move |_, input: Table| {
             let node = crate::node::file_from_lua(input)?;
-            let id = node.id.clone();
+            // let id = node.id.clone();
             txx.send(node).unwrap();
-            Ok(id)
+            Ok(())
         })?,
     )?;
 
@@ -60,11 +60,10 @@ pub fn main() -> eyre::Result<()> {
     module.set(
         "dconf",
         lua.create_function(move |_, input: Table| {
-            // let node = crate::node::file_from_lua(input)?;
-            let node = crate::dconf::dconf_node(input)?;
-            let id = node.id.clone();
+            let node = crate::gsettings::dconf_node(input)?;
+            // let id = node.id.clone();
             txx.send(node).unwrap();
-            Ok(id)
+            Ok(())
         })?
     )?;
 
