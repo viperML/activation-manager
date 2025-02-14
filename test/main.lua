@@ -15,3 +15,7 @@ am.dconf {
   value = "flat",
   -- value = "flat",
 }
+
+am.exec {
+  command = {"ls", "-la"},
+}

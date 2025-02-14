@@ -67,6 +67,16 @@ pub fn main() -> eyre::Result<()> {
         })?
     )?;
 
+    let txx = tx.clone();
+    module.set(
+        "exec",
+        lua.create_function(move |_, input: Table| {
+            let node = crate::exec_node::lua_to_exec(input)?;
+            txx.send(node).unwrap();
+            Ok(())
+        })?
+    )?;
+
     load_module(&lua, "am", &module)?;
 
     lua.load(args.file.as_path()).exec()?;
