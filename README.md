@@ -101,4 +101,5 @@ TODO
   - [x] Home-manager-like Nix library
     - [x] Use static directory
     - [x] Installable from NixOS
+    - [ ] Handle GC Roots
 
