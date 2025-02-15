@@ -47,7 +47,7 @@ in
 
     dconf = {
       settings = mkOption {
-        default = {};
+        default = { };
         type = types.attrsOf (types.anything);
       };
     };
@@ -96,7 +96,7 @@ in
               { name, value }:
               # lua
               "am.dconf ${
-                lib.generators.toLua {} {
+                lib.generators.toLua { } {
                   inherit value;
                   key = name;
                 }
@@ -110,6 +110,7 @@ in
       pkgs.runCommandLocal "am-bundle"
         {
           nativeBuildInputs = [ pkgs.makeWrapper ];
+          meta.mainProgram = "activate";
         }
         ''
           mkdir -p $out/bin
