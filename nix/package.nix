@@ -4,8 +4,12 @@
   pkg-config,
   lua54Packages,
 }:
+let
+  cargoToml = builtins.fromTOML (builtins.readFile ../Cargo.toml);
+in
 rustPlatform.buildRustPackage {
-  name = "activation-manager";
+  pname = cargoToml.package.name;
+  version = cargoToml.package.version;
 
   src = lib.fileset.toSource {
     root = ../.;
@@ -27,4 +31,6 @@ rustPlatform.buildRustPackage {
   buildInputs = [
     lua54Packages.lua
   ];
+
+  meta.mainProgram = cargoToml.package.name;
 }

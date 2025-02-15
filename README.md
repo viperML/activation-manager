@@ -11,6 +11,7 @@ Features:
       - [ ] Copy files
       - [ ] Recursive for folders
     - [x] Exec node type
+    - [ ] Lua node type
     - [ ] Systemd unit node type
     - [x] Dconf node type
 
