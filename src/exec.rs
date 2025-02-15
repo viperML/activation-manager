@@ -1,5 +1,5 @@
 use color_eyre::owo_colors::OwoColorize;
-use tracing::trace;
+use tracing::warn;
 
 use crate::node::Node;
 
@@ -11,7 +11,11 @@ pub fn run_graph(nodes: &Vec<Node>, dry: bool) -> eyre::Result<()> {
         }
 
         if !dry {
-            node.kind.exec()?;
+            let result = node.kind.exec();
+
+            if let Err(report) = result {
+                warn!("{:#}", report);
+            }
         }
     }
 

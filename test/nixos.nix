@@ -1,12 +1,4 @@
 { config, pkgs, ... }:
-let
-  mkHome =
-    mod:
-    (import ../nix/home/default.nix {
-      modules = [ mod ];
-    }).config.build.bundle;
-
-in
 {
   imports = [
     ../nix/home/nixos-module.nix
@@ -16,7 +8,7 @@ in
     isNormalUser = true;
     extraGroups = [ "wheel" ];
     packages = [
-      (mkHome {
+      (config.activation-manager.mkHome {
         home.file."foo".target = "bar";
       })
     ];

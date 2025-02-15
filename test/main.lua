@@ -17,5 +17,9 @@ am.dconf {
 }
 
 am.exec {
-  command = {"ls", "-la"},
+  command = { "ls" },
+}
+
+am.exec {
+  command = { "blhablah" },
 }
