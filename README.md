@@ -84,6 +84,7 @@ TODO
     - [ ] Before, after and id's
     - [ ] Error recovery
     - [ ] Rollback system
+    - [ ] Required/not required nodes (maybe like systemd's)
 
   - Node types
     - [x] File symlink node type
