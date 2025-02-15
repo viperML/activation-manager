@@ -71,6 +71,10 @@ To use Activation-Manager as a NixOS module:
 }
 ~~~
 
+## Documentation
+
+TODO
+
 
 ## Features and roadmap
 
