@@ -1,5 +1,8 @@
+use std::process::Command;
+
 use eyre::bail;
 use mlua::Table;
+use once_cell::sync::Lazy;
 use tracing::trace;
 
 use crate::node::{before_after, Node, NodeExec};
@@ -11,9 +14,32 @@ pub struct GsettingsNode {
     pub value: String,
 }
 
+static SCHEMAS: Lazy<eyre::Result<()>> = Lazy::new(|| {
+    let out = Command::new("gsettings")
+        .args(["list-schemas", "--print-paths"])
+        .output()?;
+    if !out.status.success() {
+        bail!("Command failed");
+    }
+
+    let stdout = String::from_utf8(out.stdout)?;
+
+    for line in stdout.lines() {
+        let (key, path) = line.split_once(" ").unwrap();
+        trace!(?key, ?path);
+    }
+
+    Ok(())
+});
+
 impl NodeExec for GsettingsNode {
     #[tracing::instrument(level = "trace")]
     fn exec(&self) -> eyre::Result<()> {
+        match Lazy::<_>::force(&SCHEMAS) {
+            Ok(_) => {},
+            Err(err) => bail!(err),
+        }
+
         let out = std::process::Command::new("gsettings")
             .arg("set")
             .arg(self.schema.join("."))

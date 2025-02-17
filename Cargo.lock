@@ -11,6 +11,7 @@ dependencies = [
  "color-eyre",
  "eyre",
  "mlua",
+ "once_cell",
  "owo-colors 4.1.0",
  "serde",
  "sha2",
