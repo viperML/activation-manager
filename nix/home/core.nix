@@ -1,6 +1,7 @@
 {
   pkgs,
   config,
+  options,
   lib,
   ...
 }:
@@ -13,10 +14,12 @@ let
       options = {
         target = mkOption {
           type = types.str;
+          description = "FIXME";
         };
         link = mkOption {
           type = types.str;
           default = name;
+          description = "FIXME";
         };
       };
     };
@@ -27,14 +30,27 @@ in
       package = mkOption {
         type = types.package;
         default = pkgs.callPackage ../package.nix { };
+        description = "FIXME";
       };
 
       manifest = mkOption {
         type = types.package;
+        description = "FIXME";
       };
 
       bundle = mkOption {
         type = types.package;
+        description = "FIXME";
+      };
+
+      optionsDoc = mkOption {
+        type = types.attrsOf types.package;
+        visible = false;
+        default = pkgs.nixosOptionsDoc {
+          inherit options;
+        };
+        readOnly = true;
+        description = "FIXME";
       };
     };
 
@@ -42,6 +58,7 @@ in
       file = mkOption {
         default = { };
         type = types.attrsOf (types.submodule fileSubmodule);
+        description = "FIXME";
       };
     };
 
@@ -49,6 +66,7 @@ in
       settings = mkOption {
         default = { };
         type = types.attrsOf (types.anything);
+        description = "FIXME";
       };
     };
   };
