@@ -2,21 +2,17 @@ use std::fmt;
 use std::fs;
 use std::os::unix;
 use std::path::PathBuf;
-use std::sync::atomic::AtomicU32;
 use std::sync::Mutex;
 
 use eyre::ContextCompat;
 use mlua::prelude::*;
 use mlua::Table;
 use once_cell::sync::Lazy;
-use once_cell::sync::OnceCell;
 use sha2::{Digest, Sha256};
-use tracing::debug;
-use tracing::trace;
 
 #[derive(Debug)]
 pub struct Node {
-    pub meta: NodeMetadata,
+    pub metadata: NodeMetadata,
     pub kind: Box<dyn NodeExec>,
 }
 
@@ -56,9 +52,7 @@ impl NodeExec for FileNodeKind {
 #[derive(Debug)]
 pub struct IdGenerator(Mutex<u64>);
 
-static ID_GENERATOR: Lazy<IdGenerator> = Lazy::new(|| {
-    IdGenerator(Mutex::new(0))
-});
+static ID_GENERATOR: Lazy<IdGenerator> = Lazy::new(|| IdGenerator(Mutex::new(0)));
 
 impl IdGenerator {
     fn get_next(&self) -> String {
@@ -67,8 +61,6 @@ impl IdGenerator {
         return format!("node-internal-{}", *x);
     }
 }
-
-
 
 impl NodeMetadata {
     pub fn from_table(table: &Table) -> Self {
@@ -111,7 +103,7 @@ pub fn file_from_lua(table: Table) -> LuaResult<Node> {
 
     let node = Node {
         kind: Box::new(kind),
-        meta,
+        metadata: meta,
     };
 
     Ok(node)

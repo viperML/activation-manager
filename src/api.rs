@@ -2,10 +2,8 @@ use std::path::PathBuf;
 use std::sync::mpsc;
 
 use mlua::prelude::*;
-use mlua::LuaSerdeExt;
 use mlua::Table;
 
-use serde::Deserialize;
 use tracing::debug;
 use tracing::trace;
 
@@ -71,7 +69,7 @@ pub fn main() -> eyre::Result<()> {
         "exec",
         lua.create_function(move |_, input: Table| {
             let node = crate::exec_node::lua_to_exec(input)?;
-            let id = node.meta.id.clone();
+            let id = node.metadata.id.clone();
             txx.send(node).unwrap();
             Ok(id)
         })?,

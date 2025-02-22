@@ -29,13 +29,15 @@ impl NodeExec for ExecNode {
 
 pub(crate) fn lua_to_exec(input: mlua::Table) -> mlua::Result<Node> {
     let command: Vec<String> = input.get("command")?;
-    let mut meta = NodeMetadata::from_table(&input);
+    let mut metadata = NodeMetadata::from_table(&input);
 
     let kind = ExecNode { command };
-    meta.description = meta.description.or_else(|| Some(kind.command.join(" ")));
+    metadata.description = metadata
+        .description
+        .or_else(|| Some(kind.command.join(" ")));
 
     Ok(Node {
-        meta,
+        metadata,
         kind: Box::new(kind),
     })
 }
