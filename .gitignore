@@ -1,4 +1,7 @@
 /target
-/.direnv
+.direnv
 *result*
 *.qcow2
+node_modules
+.astro
+dist

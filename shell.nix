@@ -7,6 +7,7 @@ pkgs.mkShell {
 
     pkgs.rust-analyzer
     pkgs.rustfmt
+    pkgs.yaml-language-server
 
     # If the dependencies need system libs, you usually need pkg-config + the lib
     pkgs.pkg-config
