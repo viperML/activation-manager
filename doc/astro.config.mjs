@@ -4,6 +4,8 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
+	site: "https://viperml.github.io",
+	base: "/activation-manager",
 	integrations: [
 		starlight({
 			title: 'My Docs',
