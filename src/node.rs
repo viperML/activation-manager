@@ -2,20 +2,29 @@ use std::fmt;
 use std::fs;
 use std::os::unix;
 use std::path::PathBuf;
+use std::sync::atomic::AtomicU32;
+use std::sync::Mutex;
 
 use eyre::ContextCompat;
 use mlua::prelude::*;
 use mlua::Table;
+use once_cell::sync::Lazy;
+use once_cell::sync::OnceCell;
 use sha2::{Digest, Sha256};
 use tracing::debug;
 use tracing::trace;
 
 #[derive(Debug)]
 pub struct Node {
-    // pub id: String,
+    pub meta: NodeMetadata,
+    pub kind: Box<dyn NodeExec>,
+}
+
+#[derive(Debug)]
+pub struct NodeMetadata {
+    pub id: String,
     pub before: Vec<String>,
     pub after: Vec<String>,
-    pub kind: Box<dyn NodeExec>,
     pub description: Option<String>,
 }
 
@@ -24,12 +33,12 @@ pub trait NodeExec: fmt::Debug {
 }
 
 #[derive(Debug)]
-pub struct File {
+pub struct FileNodeKind {
     link: String,
     target: String,
 }
 
-impl NodeExec for File {
+impl NodeExec for FileNodeKind {
     fn exec(&self) -> eyre::Result<()> {
         if let Ok(meta) = fs::symlink_metadata(&self.link) {
             if meta.is_symlink() {
@@ -44,20 +53,46 @@ impl NodeExec for File {
     }
 }
 
-pub fn before_after(table: &Table) -> (Vec<String>, Vec<String>) {
-    let before: Vec<String> = table.get("before").unwrap_or_default();
-    let after: Vec<String> = table.get("after").unwrap_or_default();
-    (before, after)
+#[derive(Debug)]
+pub struct IdGenerator(Mutex<u64>);
+
+static ID_GENERATOR: Lazy<IdGenerator> = Lazy::new(|| {
+    IdGenerator(Mutex::new(0))
+});
+
+impl IdGenerator {
+    fn get_next(&self) -> String {
+        let mut x = self.0.lock().unwrap();
+        *x = *x + 1;
+        return format!("node-internal-{}", *x);
+    }
+}
+
+
+
+impl NodeMetadata {
+    pub fn from_table(table: &Table) -> Self {
+        let before = table.get("before").unwrap_or_default();
+        let after = table.get("after").unwrap_or_default();
+        let description = table.get("description").unwrap_or_default();
+
+        Self {
+            id: ID_GENERATOR.get_next(),
+            before,
+            after,
+            description,
+        }
+    }
 }
 
 pub fn file_from_lua(table: Table) -> LuaResult<Node> {
     let link: String = table.get("link")?;
     let target: String = table.get("target")?;
     let id: Option<String> = table.get("id").ok();
-    let (before, after) = before_after(&table);
+    let mut meta = NodeMetadata::from_table(&table);
     let copy: bool = table.get("copy").ok().unwrap_or(false);
 
-    let kind = File { link, target };
+    let kind = FileNodeKind { link, target };
 
     let id = match id {
         Some(x) => x,
@@ -70,14 +105,13 @@ pub fn file_from_lua(table: Table) -> LuaResult<Node> {
         }
     };
 
-    let description = Some(format!("Symlink {} -> {}", kind.link, kind.target));
+    meta.description = meta
+        .description
+        .or_else(|| Some(format!("Symlink {} -> {}", kind.link, kind.target)));
 
     let node = Node {
-        // id,
         kind: Box::new(kind),
-        before,
-        after,
-        description,
+        meta,
     };
 
     Ok(node)

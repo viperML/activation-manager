@@ -10,15 +10,16 @@ local home = os.getenv("HOME")
 --   to = home .. "/bar",
 -- }
 
-am.dconf {
-  key = "/org/gnome/desktop/peripherals/mouse/accel-profile",
-  value = "flat",
-  -- value = "flat",
-}
+-- am.dconf {
+--   key = "/org/gnome/desktop/peripherals/mouse/accel-profile",
+--   value = "flat",
+-- }
 
-am.exec {
+local ls = am.exec {
   command = { "ls" },
 }
+
+am.debug(ls)
 
 am.exec {
   command = { "blhablah" },

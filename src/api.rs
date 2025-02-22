@@ -14,7 +14,7 @@ struct Args {
     file: PathBuf,
 
     #[arg(short = 'n', long)]
-    dry: bool
+    dry: bool,
 }
 
 fn load_module<S: AsRef<str>>(lua: &Lua, name: S, module: &Table) -> LuaResult<()> {
@@ -29,7 +29,6 @@ fn load_module<S: AsRef<str>>(lua: &Lua, name: S, module: &Table) -> LuaResult<(
 pub fn main() -> eyre::Result<()> {
     let args = <Args as clap::Parser>::parse();
     trace!(?args);
-
 
     let lua = Lua::new();
 
@@ -53,7 +52,7 @@ pub fn main() -> eyre::Result<()> {
         lua.create_function(|lua, input: LuaValue| {
             debug!("{input:?}");
             Ok(())
-        })?
+        })?,
     )?;
 
     let txx = tx.clone();
@@ -64,7 +63,7 @@ pub fn main() -> eyre::Result<()> {
             // let id = node.id.clone();
             txx.send(node).unwrap();
             Ok(())
-        })?
+        })?,
     )?;
 
     let txx = tx.clone();
@@ -72,9 +71,10 @@ pub fn main() -> eyre::Result<()> {
         "exec",
         lua.create_function(move |_, input: Table| {
             let node = crate::exec_node::lua_to_exec(input)?;
+            let id = node.meta.id.clone();
             txx.send(node).unwrap();
-            Ok(())
-        })?
+            Ok(id)
+        })?,
     )?;
 
     load_module(&lua, "am", &module)?;

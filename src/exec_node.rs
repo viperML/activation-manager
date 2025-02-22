@@ -2,7 +2,7 @@ use std::process::Stdio;
 
 use eyre::bail;
 
-use crate::node::{before_after, Node, NodeExec};
+use crate::node::{Node, NodeExec, NodeMetadata};
 
 #[derive(Debug)]
 pub struct ExecNode {
@@ -29,15 +29,13 @@ impl NodeExec for ExecNode {
 
 pub(crate) fn lua_to_exec(input: mlua::Table) -> mlua::Result<Node> {
     let command: Vec<String> = input.get("command")?;
-    let (before, after) = before_after(&input);
+    let mut meta = NodeMetadata::from_table(&input);
 
     let kind = ExecNode { command };
-    let description = kind.command.join(" ");
+    meta.description = meta.description.or_else(|| Some(kind.command.join(" ")));
 
     Ok(Node {
-        before,
-        after,
-        description: Some(description),
+        meta,
         kind: Box::new(kind),
     })
 }
