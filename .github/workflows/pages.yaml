@@ -21,7 +21,7 @@ jobs:
         run: |
           pushd doc
           eval "$(nix print-dev-env -f ./shell.nix)"
-          npm run install
+          npm install -D
           npm run build
           popd
       - name: Upload artifacts
