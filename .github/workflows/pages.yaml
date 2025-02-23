@@ -26,13 +26,13 @@ jobs:
           pushd doc
           eval "$(nix print-dev-env -f ./shell.nix)"
           npm install -D
-          npm run build
+          npm run docs:build
           popd
       - name: Upload artifacts
         id: deployment
         uses: actions/upload-pages-artifact@v3
         with:
-          path: doc/dist
+          path: doc/.vitepress/dist
 
   deploy:
     environment:
