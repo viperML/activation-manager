@@ -1,10 +1,13 @@
 {
+  "type": "module",
   "scripts": {
     "docs:dev": "vitepress dev",
     "docs:build": "vitepress build",
     "docs:preview": "vitepress preview"
   },
   "devDependencies": {
+    "@types/node": "^22.13.5",
+    "typescript": "^5.7.3",
     "vitepress": "^1.6.3"
   }
 }
