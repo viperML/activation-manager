@@ -21,7 +21,7 @@ hero:
 ---
 
 
-<h2>Options</h2>
+<h2>Module options</h2>
 
 <script setup>
 import { data } from "./nixos.data.ts"
@@ -29,5 +29,5 @@ import { data } from "./nixos.data.ts"
 
 <div v-for="elem in data" :key="elem.loc">
   <h3>{{ elem.loc.join(".") }}</h3>
-  <p>{{elem.description}}</p>
+  <div v-html="elem.description"></div>
 </div>

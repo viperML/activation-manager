@@ -16,11 +16,15 @@ type Data = OptionEntry[]
 declare const data: Data
 export { data }
 
+const exclude = [
+  /_module\.args/,
+  /build\.*/,
+]
 
 export default defineLoader({
   async load(): Promise<Data> {
-const config = globalThis.VITEPRESS_CONFIG as SiteConfig
-const md = await createMarkdownRenderer(config.srcDir, config.markdown, config.site.base, config.logger)
+    const config = globalThis.VITEPRESS_CONFIG as SiteConfig
+    const md = await createMarkdownRenderer(config.srcDir, config.markdown, config.site.base, config.logger)
 
     const exec = util.promisify(child_process.exec);
     const { stdout } = await exec("nix build -f ../test/main.nix config.build.optionsDoc.optionsJSON --no-link --print-out-paths")
@@ -31,11 +35,22 @@ const md = await createMarkdownRenderer(config.srcDir, config.markdown, config.s
 
     const obj: Record<string, OptionEntry> = JSON.parse(data);
 
-    const elems = Object.values(obj).map(elem => {
-      elem.description = md.render(elem.description);
+    const elems = Object.values(obj)
+      .filter(elem => {
+        for (const rule of exclude) {
+          const loc = elem.loc.join(".");
+          const matches = rule.exec(loc);
+          if (matches !== null) {
+            return false;
+          }
+        }
+        return true;
+      })
+      .map(elem => {
+        elem.description = md.render(elem.description);
 
-      return elem;
-    });
+        return elem;
+      });
 
     return Object.values(obj)
   }
