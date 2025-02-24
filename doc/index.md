@@ -4,12 +4,12 @@ layout: home
 
 hero:
   name: Activation-Manager
-  text: Post-modern impure configuration managemenent
-  tagline: Documentation
-  # actions:
-  #   - theme: brand
-  #     text: Options
-  #     link: /options
+  text: Post-modern configuration managemenent
+  # tagline: Documentation
+  actions:
+    - theme: brand
+      text: GitHub
+      link: https://github.com/viperML/activation-manager
 
 # features:
 #   - title: Feature A
@@ -30,4 +30,6 @@ import { data } from "./nixos.data.ts"
 <div v-for="elem in data" :key="elem.loc">
   <h3>{{ elem.loc.join(".") }}</h3>
   <div v-html="elem.description"></div>
+  <span>Type:</span>
+  <pre>{{elem.type}}</pre>
 </div>

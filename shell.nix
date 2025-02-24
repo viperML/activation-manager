@@ -13,6 +13,8 @@ pkgs.mkShell {
     pkgs.pkg-config
     lua54Packages.lua
     lua-language-server
+
+    pkgs.nodejs
   ];
 
   env = {

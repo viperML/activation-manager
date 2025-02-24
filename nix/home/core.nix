@@ -14,12 +14,16 @@ let
       options = {
         target = mkOption {
           type = types.str;
-          description = "FIXME";
+          description = ''
+            File that the link will point to.
+          '';
         };
         link = mkOption {
           type = types.str;
           default = name;
-          description = "FIXME";
+          description = ''
+            Location of the link.
+          '';
         };
       };
     };
@@ -58,7 +62,9 @@ in
       file = mkOption {
         default = { };
         type = types.attrsOf (types.submodule fileSubmodule);
-        description = "FIXME";
+        description = ''
+          Create a symlink declaratively by specifying its target link and its location.
+        '';
       };
     };
 
@@ -66,7 +72,12 @@ in
       settings = mkOption {
         default = { };
         type = types.attrsOf (types.anything);
-        description = "FIXME";
+        example = {
+          "/org/gnome/desktop/interface/color-scheme" = "prefer-dark";
+        };
+        description = ''
+          Pairs of dconf key path and its value.
+        '';
       };
     };
   };

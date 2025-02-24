@@ -9,6 +9,13 @@ export interface OptionEntry {
   loc: string[],
   readOnly: boolean,
   type: string,
+  example?: Example,
+  default?: Example,
+}
+
+export interface Example {
+  __type: string,
+  text: string,
 }
 
 type Data = OptionEntry[]
@@ -52,6 +59,8 @@ export default defineLoader({
         return elem;
       });
 
-    return Object.values(obj)
+    console.log(elems);
+
+    return elems;
   }
 })

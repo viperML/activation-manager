@@ -26,8 +26,8 @@ jobs:
             extra-experimental-features = pipe-operators
       - name: Build page
         run: |
-          pushd doc
           eval "$(nix print-dev-env -f ./shell.nix)"
+          pushd doc
           npm install -D
           npm run docs:build
           popd
