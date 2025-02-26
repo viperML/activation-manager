@@ -8,6 +8,9 @@ hero:
   # tagline: Documentation
   actions:
     - theme: brand
+      text: Options
+      link: /options
+    - theme: alt
       text: GitHub
       link: https://github.com/viperML/activation-manager
 
@@ -19,17 +22,3 @@ hero:
 #   - title: Feature C
 #     details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
 ---
-
-
-<h2>Module options</h2>
-
-<script setup>
-import { data } from "./nixos.data.ts"
-</script>
-
-<div v-for="elem in data" :key="elem.loc">
-  <h3>{{ elem.loc.join(".") }}</h3>
-  <div v-html="elem.description"></div>
-  <span>Type:</span>
-  <pre>{{elem.type}}</pre>
-</div>
