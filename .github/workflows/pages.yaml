@@ -26,11 +26,9 @@ jobs:
             extra-experimental-features = pipe-operators
       - name: Build page
         run: |
-          eval "$(nix print-dev-env -f ./shell.nix)"
-          pushd doc
-          npm install -D
-          npm run docs:build
-          popd
+          eval "$(nix print-dev-env)"
+          pnpm install
+          pnpm build
       - name: Upload artifacts
         id: deployment
         uses: actions/upload-pages-artifact@v3

@@ -1,6 +1,0 @@
-{
-    "vue.server.includeLanguages": [
-        "vue",
-        "markdown",
-    ]
-}

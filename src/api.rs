@@ -6,6 +6,7 @@ use mlua::Table;
 
 use tracing::debug;
 use tracing::trace;
+use tracing::Callsite;
 
 #[derive(Debug, clap::Parser)]
 struct Args {

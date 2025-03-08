@@ -1,0 +1,13 @@
+{
+  "name": "activation-manager-documentation",
+  "type": "module",
+  "scripts": {
+    "build": "vitepress build doc",
+    "dev": "vitepress dev doc"
+  },
+  "packageManager": "pnpm@10.4.1",
+  "devDependencies": {
+    "easy-nix-documentation": "^1.0.7",
+    "vitepress": "^1.6.3"
+  }
+}

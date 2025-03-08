@@ -1,24 +1,12 @@
 ---
-title: Module
+title: Options
 ---
 
-## Module options
-
+# {{ $frontmatter.title }}
 
 <script setup>
-import { data } from "./nixos.data.ts"
-
-// const config = globalThis.VITEPRESS_CONFIG as SiteConfig
-// const md = await createMarkdownRenderer(config.srcDir, config.markdown, config.site.base, config.logger)
-
-// const t = "<h2>Test</h2>"
+import { data } from "./am.data.js";
+import { RenderDocs } from "easy-nix-documentation";
 </script>
 
-<div v-for="elem in data" :key="elem.loc">
-
-  ### {{elem.loc.join(".")}}
-
-  <div v-html="elem.description"></div>
-  <span>Type:</span>
-  <pre>{{elem.type}}</pre>
-</div>
+<RenderDocs :options="data" />
